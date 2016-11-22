@@ -1,0 +1,38 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumerate}
+
+\begin{document}
+
+\section{Basic use}
+To run program on a super computer requires the following modules, or something equivalent
+\begin{itemize}
+	\item gcc/gcc-4.9.2
+	\item openmpi/openmpi-1.8.4\_gcc-4.9.2
+	\item slurm/slurm
+	\item gsl/gsl-1.16\_gcc-4.9.2
+\end{itemize}
+Use \textit{make -f parallel} to make the parallel executables, \textit{./EurPar} and \textit{./EncPar}.
+To run code, submit a batch script with desired parameters.
+
+
+Output files for Jet \# are saved in \\\\
+\indent /lustre/janus\_scratch/beso3770/Eur\_JetResults/Jet\#/ \\
+\indent /lustre/janus\_scratch/beso3770/Enc\_JetResults/Jet\#/ \\\\
+Note that these folders are specific to Janus, the CU supercomputer. On other computers
+the output address must be changed in Jet.cpp. Once binary files have been produced, 
+zip up binary files for download via, e.g., \textit{zip Jet1\_dens.zip ./*.dens}.
+
+
+General notes -
+	- C-code reads in normal longitude (LON). Note that *western longitude* (WLON)
+		+ LON = 360 - mod(WLON,360)
+	- Many things can be specified via flags on command line
+	- Some things like what sizes to simulate must be changed in the code
+	- Large particles - simulated grid with 50m resolution, height 15km and width 25km for particles sized 
+
+
+\section{Structure}
+
+
+\end{document}

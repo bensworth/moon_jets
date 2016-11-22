@@ -1,0 +1,51 @@
+# Makefile for Enceladus simulations
+
+# unix-tools
+RM = rm -f
+
+LIB = -L/usr/local/lib
+INC = -I/usr/local/include
+
+# compiler
+CC = mpic++ -std=c++11 -fopenmp -Wall -lgsl -lgslcblas -Ofast
+CP = mpicc 
+
+SRCS  = genFunctions.cpp Solver.cpp Jet.cpp 
+SRCS1 = EncParallel.cpp
+SRCS2 = EurParallel.cpp
+
+OBJS  = ${SRCS:.cpp=.o}
+OBJS1 = ${SRCS1:.cpp=.o}
+EXEC1 = EncPar
+OBJS2 = ${SRCS2:.cpp=.o}
+EXEC2 = EurPar
+
+INCLUDES  = 
+CFLAGS    = $(INCLUDES) -g3
+
+#.SUFFIXES :
+.SUFFIXES : .o .cpp .h
+
+all: $(EXEC1) $(EXEC2)
+
+.h.o:
+	$(CC) $(INCLUDES) $(CFLAGS) -c $<
+
+.cpp.o:
+	$(CC) $(INCLUDES) $(CFLAGS) -c $<
+
+$(EXEC1): $(OBJS) $(OBJS1) 
+	$(CC) $(OBJS) $(OBJS1) $(CFLAGS) -o $(EXEC1)
+
+$(EXEC2): $(OBJS) $(OBJS2)
+	$(CC) $(OBJS) $(OBJS2) $(CFLAGS) -o $(EXEC2)
+	
+Jet.o: genFunctions.o
+EncParallel.o: Jet.o Solver.o
+EurParallel.o: Jet.o Solver.o
+
+clean: 
+	$(RM) $(OBJS) $(OBJS1) $(OBJS2) $(EXEC1) $(EXEC2)
+	make -f parallel
+	
+install:
