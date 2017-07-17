@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
 		// Information about current simulation for output purposes.
 		int   orthogonal = 0,		jetNum 	    = 1,	bFieldModel  = 1,
-			  jetRef 	 = 1,		codeVersion = 8;
+			  jetRef 	 = 1,		codeVersion = 10;
 
 		for(int i=1; i<argc; i++) {
 

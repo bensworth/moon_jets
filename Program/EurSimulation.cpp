@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 
 	// Define variables for simulation.	
 	// Integer values
-	int	codeVersion = 8,		charging    = 0,		data 	    = 1,
+	int	codeVersion = 10,		charging    = 0,		data 	    = 1,
 		xmin 		= -4000,	xmax 		= 4000, 	ymin 	    = -4000,	
 		ymax 		= 4000,	 	zmin 	    = -7500,	zmax 		= 0,
 		numRings    = 14,		numPoints   = 40,		orthogonal  = 0,

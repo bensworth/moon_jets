@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 
 	// Define variables for simulation.	
 	// Integer values		
-	int	codeVersion = 8,		bFieldModel  = 1,		jetRef 	    = 1,
+	int	codeVersion = 10,		bFieldModel  = 1,		jetRef 	    = 1,
 		numCore     = 1,		charging 	 = 2,		jetNum      = 1,
 		data 	    = 1,		numSurfGrids = 100,		xmin 		= -250,	
 		xmax 		= 250,		ymin		 = -250,	ymax 	 	= 250,

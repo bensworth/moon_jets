@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 
 		// Define variables for simulation.	
 		// Integer values
-		int	codeVersion  = 8,
+		int	codeVersion  = 10,
 			jetNum 	     = 1,
 			jetRef 	     = 1,
 			charging 	 = 0,

@@ -55,9 +55,8 @@ int main(int argc, char *argv[])
 
 		// List of particle radii to simulate. 
 		// vector<int> sizes = {273,313,343,353,381,438,462};
-		vector<int> sizes = {339,348,361,373,380,391,400,414,427,432,437};
-		// vector<int> sizes = {273,307};
-		// vector<int> sizes = {307};
+		// vector<int> sizes = {339,348,361,373,380,391,400,414,427,432,437};
+		vector<int> sizes = {372,395,411,427,432};
 
 		// Number of tasks to perform and number of tasks complete. 
 		int N = sizes.size();
@@ -105,7 +104,7 @@ int main(int argc, char *argv[])
 
 		// Information about current simulation for output purposes.
 		int   orthogonal = 0,		jetNum 	    = 1,	bFieldModel  = 1,
-			  jetRef 	 = 1,		codeVersion = 9,	jet_ind 	 = -1;
+			  jetRef 	 = 1,		codeVersion = 10,	jet_ind 	 = -1;
 
 		bool collisionOnly = false, montecarlo = false;
 

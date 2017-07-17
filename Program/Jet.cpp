@@ -177,26 +177,26 @@ void Jet::DensityWrite(const unordered_map<long int,pair<float,float> > & Densit
 	stringstream density_out;
 	if(GLOBAL_bodyID == 1) {
 		if(monteCarlo == 1) {
-			density_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
+			density_out << "/scratch/summit/beso3770/Enc_JetResults/Jet" << m_jetId
 				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".dens";	
 		}
 		else {
-			density_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
+			density_out << "/scratch/summit/beso3770/Enc_JetResults/Jet" << m_jetId
 				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << ".dens";	
 		}
 	}
 	else if(GLOBAL_bodyID == 2) {
 		if(monteCarlo == 1) {
-			density_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
+			density_out << "/scratch/summit/beso3770/Eur_JetResults/Jet" << m_jetId
 				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".dens";	
 		}
 		else {
-			density_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
+			density_out << "/scratch/summit/beso3770/Eur_JetResults/Jet" << m_jetId
 				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << ".dens";	
 		}
@@ -295,26 +295,26 @@ void Jet::CollisionWrite(const vector<vector<float> > collisions, const float & 
 	
 	if(GLOBAL_bodyID == 1) {
 		if(monteCarlo == 1) { 
-			collision_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
+			collision_out << "/scratch/summit/beso3770/Enc_JetResults/Jet" << m_jetId
 				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".coll";	
 		}
 		else {
-			collision_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
+			collision_out << "/scratch/summit/beso3770/Enc_JetResults/Jet" << m_jetId
 				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << ".coll";	
 		}
 	}
 	else if(GLOBAL_bodyID == 2) {
 		if(monteCarlo == 1) { 
-			collision_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
+			collision_out << "/scratch/summit/beso3770/Eur_JetResults/Jet" << m_jetId
 				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".coll";	
 		}
 		else {
-			collision_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
+			collision_out << "/scratch/summit/beso3770/Eur_JetResults/Jet" << m_jetId
 				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
 				<< m_charging << "-" << m_bFieldModel << ".coll";	
 		}
