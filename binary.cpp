@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 // -------------------------------------------------------------------------------------- //
 #if 1
 
-	ifstream C_stream("C-5_r438_a0.5.coll", ios::binary);
+	ifstream C_stream("/Users/ben/Documents/Conn_charge/Jet-9/C-9_r348_a5.5_BF2-1.coll", ios::binary);
 	int dataId, version, plasmaModel, jetRef, jetId, sizeId, numCores,
 		runMinutes, total, collided, rows=0, cols=0, bodyID, MC, charging;
 	float inclination, vgas, RC;
@@ -118,7 +118,9 @@ int main(int argc, char *argv[])
 		}
 		cout <<endl;
 	}	
-	cout << "Data ID: " << dataId << "\nVersion: " << version << "\nPlasma Model: " << plasmaModel << "\nJet Ref. ID: " << jetRef << "\nJet ID: " << jetId << "\nSize ID: " << sizeId << "\nJet Inclination: " << inclination << "\nFraction collisions: " << collided << "/" << total << endl;
+	cout << "Data ID: " << dataId << "\nVersion: " << version << "\nPlasma Model: " << plasmaModel \
+		 << "\nJet Ref. ID: " << jetRef << "\nJet ID: " << jetId << "\nSize ID: " << sizeId \
+		 << "\nJet Inclination: " << inclination << "\nFraction collisions: " << collided << "/" << total << endl;
 	cout << "Saved size: " << rows << " x " << cols << endl;
 	cout << "Actual size: " << Collisions.size() << " x " << Collisions[0].size() << endl;
 
@@ -129,7 +131,7 @@ int main(int argc, char *argv[])
 // ------------------------------------------------------------------------------------- //
 #if 0
 
-	ifstream D_stream("D424_r381_a0.5.dens", ios::binary);
+	ifstream D_stream("/Users/ben/Documents/Conn_charge/Jet-9/D-9_r348_a1.5_BF2-1.dens", ios::binary);
 	// ifstream D_stream("D397_r381_a0.dens", ios::binary);
 	int dataId, version, plasmaModel, jetRef, jetId, sizeId, numCores,
 		runMinutes, size_x, size_y, size_z, min_x, min_y, min_z,

@@ -59,8 +59,8 @@ private:
 					m_longitude,    	// longitude of the jet's location on moon
 					m_jetZenith,    	// zenith angle of the jet's tilt
 					m_jetAzimuth,   	// azimuth of the jet's tilt
-					m_v_gas,			// Plume gas speed for speed distribution
-					m_critRad;			// Plume critical radius for speed distribution
+					m_v_gas,			// Plume gas speed for speed distribution (km/s)
+					m_critRad;			// Plume critical radius for speed distribution (um)
 	vector<double> 	m_jetPos;			// unit vector of jet's location in inertial frame
 	vector<double> 	m_jetDir;			// jet's ejection direction in inertial frame
     vector<double> 	m_ex, m_ey, m_ez;	// Moon body-fixed orthonormal system

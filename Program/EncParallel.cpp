@@ -9,6 +9,7 @@
 #include <cmath>
 #include <new>
 #include "mpi.h"
+#include <omp.h>
 #include "genFunctions.h"
 #include "Solver.h"
 #include "Jet.h"
@@ -29,8 +30,9 @@ int main(int argc, char *argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &numProcess);
 	int numCore = 12 * numProcess;
+	int num_threads = omp_get_max_threads();
 
-			cout << rank << "/" << numProcess << endl;
+			cout << rank << "/" << numProcess << ", OMP = " << num_threads << endl;
 
 	// Set system parameters for Enceladus/Saturn
 	SetEnceladus();
@@ -53,7 +55,9 @@ int main(int argc, char *argv[])
 
 		// List of particle radii to simulate. 
 		// vector<int> sizes = {273,313,343,353,381,438,462};
-		vector<int> sizes = {438,462};
+		vector<int> sizes = {339,348,361,373,380,391,400,414,427,432,437};
+		// vector<int> sizes = {273,307};
+		// vector<int> sizes = {307};
 
 		// Number of tasks to perform and number of tasks complete. 
 		int N = sizes.size();
@@ -61,10 +65,8 @@ int main(int argc, char *argv[])
 
 		// Hand out tasks to perform to workers until there are none left. 
 		for(int i=0; i<N; i++)
-		// for(int j=numAng-1; j>=0; j--)
 		{
 			for(int j=numAng-1; j>=0; j--)
-			// for(int i=0; i<N; i++)
 			{
 				int nextProc;
 				MPI_Recv(&nextProc, 1, MPI_INT, MPI_ANY_SOURCE, requestTag, MPI_COMM_WORLD, &status);
@@ -93,18 +95,19 @@ int main(int argc, char *argv[])
 
 		// Parameters controlling simulation. 
 		float partPot  = -1.49,		orbits = 2.,	maxInc = 15.,
-			  gridSize = 5.,		volume,	  		totalTime;
+			  gridSize = 5.,		critRad = 0.2,  v_gas = 0.5,
+			  volume,	  			totalTime;
 
 		int   oneOrbit = 118442,	numSurfGrids = 100,		extrapolate  = 15, 
 			  xmin	   = -250,		xmax		 = 250, 	ymin		 = -250,
 			  ymax	   = 250,		zmin 		 = -1000, 	zmax 		 = 500,
-			  A1 	   = 0,			charging	 = 2,		numVariables = 13;
+			  charging = 2,			numVariables = 13,		numSpeeds 	 = 100;
 
 		// Information about current simulation for output purposes.
 		int   orthogonal = 0,		jetNum 	    = 1,	bFieldModel  = 1,
-			  jetRef 	 = 1,		codeVersion = 8,	jet_ind 	 = -1;
+			  jetRef 	 = 1,		codeVersion = 9,	jet_ind 	 = -1;
 
-		bool collisionOnly = false;
+		bool collisionOnly = false, montecarlo = false;
 
 		for(int i=1; i<argc; i++) {
 
@@ -152,9 +155,6 @@ int main(int argc, char *argv[])
 				i += 1;
 				jetNum = atoi(argv[i]);
 			}
-			else if(strcmp(argv[i],"-A1") == 0) {
-				A1 = 1;
-			}
 			else if(strcmp(argv[i],"-orthogonal") == 0) {
 				orthogonal = 1;
 			}	
@@ -166,15 +166,29 @@ int main(int argc, char *argv[])
 				i += 1;
 				jetRef = atoi(argv[i]);
 			}
-			else if(strcmp(argv[i],"-version") == 0) {
-				i += 1;
-				codeVersion = atoi(argv[i]);
-			}
 			else if(strcmp(argv[i],"-collisions") == 0) {
 				collisionOnly = true;
 				if(rank == 1) {
 					cout << "Collisions only\n";
 				}
+			}
+			else if(strcmp(argv[i],"-montecarlo") == 0) {
+				montecarlo = true;
+			}
+			else if(strcmp(argv[i],"-vgas") == 0)
+			{
+				i += 1;
+				v_gas = atof(argv[i]);
+			}
+			else if(strcmp(argv[i],"-RC") == 0)
+			{
+				i += 1;
+				critRad = atof(argv[i]);
+			}
+			else if(strcmp(argv[i],"-numspeeds") == 0)
+			{
+				i += 1;
+				numSpeeds = atoi(argv[i]);
 			}
 		}
 		totalTime = ceil(orbits*oneOrbit);
@@ -210,6 +224,7 @@ int main(int argc, char *argv[])
 			coneData.push_back(temp);
 		}
 		getCone.close();
+		float d_inclination = coneData[1][0] - coneData[0][0];
 
 		// Load .csv of particle speeds.
 		vector<float> partSpeeds;
@@ -322,16 +337,14 @@ int main(int argc, char *argv[])
 			jetLocation[3] = 0;
 		}
 
-		// A1 Jet from 2010 paper
-		if(A1 == 1) {
-			jetLocation = {-72.9,-148.7,3.7,110}; // A1
-			cout << "A1" << endl;
-		}	
-	
 		if(rank == 1) {
 			std::cout << "Jet ID - " << jetNum << ", loc - (" << jetLocation[0] << ", " << jetLocation[1] << ", " << jetLocation[2] << ", " << jetLocation[3] << ")\n";
 		}
 
+		// Set speed distribution if running monte Carlo simulation
+		if (montecarlo) {
+			Eruptor.SetSpeedDist(v_gas,critRad);	
+		}
 		Eruptor.SetNumVariables(numVariables);
 		Eruptor.SetLocation(jetLocation[0],jetLocation[1],jetLocation[2],jetLocation[3]);
 		Eruptor.SetInitCond(moonPos,moonVel);
@@ -347,10 +360,64 @@ int main(int argc, char *argv[])
 			MPI_Send(&rank, 1, MPI_INT, 0, requestTag, MPI_COMM_WORLD);
 			MPI_Recv(&sizeIndex, 1, MPI_INT, 0, radTag, MPI_COMM_WORLD, &status);
 
+
+			if (v_gas < 1) {
+				continue;
+			}
+
 			// If recieved work call, do said work. 
 			if(sizeIndex >= 0)  {
 				MPI_Recv(&angIndex, 1, MPI_INT, 0, angTag, MPI_COMM_WORLD, &status);
-				cout << "Received work order -- " << rank << endl;
+			
+				if (abs(critRad - 0.6) < 1e-6) {
+					if (sizeIndex == 432) {
+						if (angIndex < 27) {
+							if (rank == 1) {
+								std::cout << "Skipping vgas = " << v_gas << ", rc = " << critRad << 
+											", size ind " << sizeIndex << ", ang ind " << angIndex << std::endl;
+							}
+							continue;
+						}
+					}
+					else if (sizeIndex < 437) {
+						if (rank == 1) {
+							std::cout << "Skipping vgas = " << v_gas << ", rc = " <<
+										critRad << ", size ind " << sizeIndex << std::endl;
+						}
+						continue;
+					}
+				}
+				else if (abs(critRad - 0.8) < 1e-6) {
+					if (sizeIndex == 373) {
+						if ((angIndex != 28) and (angIndex != 30)) {
+							if (rank == 1) {
+								std::cout << "Skipping vgas = " << v_gas << ", rc = " << critRad << 
+											", size ind " << sizeIndex << ", ang ind " << angIndex << std::endl;
+							}
+							continue;
+						}
+					}
+					else if (sizeIndex < 380) {
+						if (rank == 1) {
+							std::cout << "Skipping vgas = " << v_gas << ", rc = " <<
+										critRad << ", size ind " << sizeIndex << std::endl;
+						}
+						continue;
+					}
+				}
+				else if (abs(critRad - 1.0) < 1e-6) {
+					if (sizeIndex != 400) {
+						if (rank == 1) {
+							std::cout << "Skipping vgas = " << v_gas << ", rc = " <<
+										critRad << ", size ind " << sizeIndex << std::endl;
+						}
+						continue;
+					}
+				}
+
+				cout << "Received work order -- " << rank << ": rc = " << critRad << ", size ind = " <<
+					sizeIndex << ", ang ind = " << angIndex << std::endl;
+				
 				// Finalize solver initialization. 
 				systemSolver.SetSize(partSizes[sizeIndex]);
 				systemSolver.SetPlasma(moonPos[0], moonPos[1], moonPos[2]);
@@ -360,6 +427,12 @@ int main(int argc, char *argv[])
 					Eruptor.CollisionMap(systemSolver, partSpeeds, partWeights[sizeIndex], coneData[angIndex],
 										 totalTime, volume, partSizes[sizeIndex], sizeIndex);
 				}
+				else if (montecarlo) {
+					float inclination = coneData[angIndex][0];
+					int   numAzimuth  = coneData[angIndex][1];
+					Eruptor.MonteCarlo_Jet(systemSolver, numSpeeds, numAzimuth, inclination, d_inclination,
+										   totalTime, volume, partSizes[sizeIndex], sizeIndex);
+				} 
 				else {
 					Eruptor.SpecSimOMP(systemSolver, partSpeeds, partWeights[sizeIndex], coneData[angIndex],
 									   totalTime, volume, partSizes[sizeIndex], sizeIndex);

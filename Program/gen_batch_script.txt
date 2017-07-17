@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH -N 2
+#SBATCH -t 1:00:00
+#SBATCH -o mpi_jet_con.out
+
+# Number of nodes, numNodes. Two processes are started on first node,
+# and only one process on remaining numP0 nodes.
+numNodes=$(cat $PBS_NODEFILE | wc -l)
+numP0=`expr $numNodes - 1`
+
+# Make hostfile using names of nodes in $PBS_NODEFILE
+sh get_hostfile.sh
+
+JETID=-2
+mpirun --hostfile hostfile_${SLURM_JOB_ID}.txt -np 2 -x OMP_NUM_THREADS=11 \
+		./EncPar -jetid $JETID -gridsize 2.5 -zmin -1000 -zmax 500 -plasma 1 \
+		>> jet${JETID}_connerey.csv : -np $numP0 -x OMP_NUM_THREADS=12 \
+		./EncPar -jetid $JETID -gridsize 2.5 -zmin -1000 -zmax 500 -plasma 1 >> jet${JETID}_connerey.csv

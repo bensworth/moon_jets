@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cmath>
+#include <cfloat>
 #include <new>
 #include <ctime>
 #include <random>
@@ -54,8 +55,8 @@ void Jet::SetLocation(const float & latitude, const float & longitude, const flo
 	m_jetAzimuth = jetAz;
 }
 
-/* Function to set the gas velocity and critical radius for the speed distribution. */
-/* Only used for Monte Carlo sampling. 												*/
+/* Function to set the gas velocity (km/s) and critical radius (um) for the speed */
+/* distribution. Only used for Monte Carlo sampling. 							  */
 void Jet::SetSpeedDist(const float & v_gas, const float & critRad)
 {
 	m_v_gas   = v_gas;
@@ -177,23 +178,27 @@ void Jet::DensityWrite(const unordered_map<long int,pair<float,float> > & Densit
 	if(GLOBAL_bodyID == 1) {
 		if(monteCarlo == 1) {
 			density_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
-				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_rc"
+				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".dens";	
 		}
 		else {
 			density_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
-				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << ".dens";	
+				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << ".dens";	
 		}
 	}
 	else if(GLOBAL_bodyID == 2) {
 		if(monteCarlo == 1) {
 			density_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
-				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_rc"
+				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".dens";	
 		}
 		else {
 			density_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
-				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << ".dens";	
+				<< "/D" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << ".dens";	
 		}
 	}
 	ofstream dens_out(density_out.str(), ios::binary);
@@ -291,23 +296,27 @@ void Jet::CollisionWrite(const vector<vector<float> > collisions, const float & 
 	if(GLOBAL_bodyID == 1) {
 		if(monteCarlo == 1) { 
 			collision_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
-				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_rc"
+				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".coll";	
 		}
 		else {
 			collision_out << "/lustre/janus_scratch/beso3770/Enc_JetResults/Jet" << m_jetId
-				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << ".coll";	
+				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << ".coll";	
 		}
 	}
 	else if(GLOBAL_bodyID == 2) {
 		if(monteCarlo == 1) { 
 			collision_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
-				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_rc"
+				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << "_rc"
 				<< m_critRad << "_vgas" << m_v_gas << ".coll";	
 		}
 		else {
 			collision_out << "/lustre/janus_scratch/beso3770/Eur_JetResults/Jet" << m_jetId
-				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << ".coll";	
+				<< "/C" << m_jetId << "_r" << partRadId << "_a" << inclination << "_BF"
+				<< m_charging << "-" << m_bFieldModel << ".coll";	
 		}
 	}
 	ofstream coll_out(collision_out.str(), ios::binary);
@@ -363,7 +372,7 @@ void Jet::CollisionWrite(const vector<vector<float> > collisions, const float & 
 	Jet::binary_write(coll_out,tmp=11);		
 	Jet::binary_write(coll_out,rows);
 	Jet::binary_write(coll_out,cols);
-	// Density profile indices
+	// Collision profile indices
 	Jet::binary_write(coll_out,tmp=12);	
 	for(int i=0; i<rows; i++) {
 		for(int j=0; j<cols; j++) {
@@ -531,10 +540,6 @@ void Jet::SpecSimOMP(Solver & systemSolver, const vector<float> & partSpeeds,
 		}
 	}
 
-	#ifdef _OPENMP
-		omp_set_num_threads(12);
-	#endif
-
 	// Loop over particle speeds.
 	#pragma omp parallel for reduction(+:particlesLaunched) schedule(dynamic)
 	for(int i=top_ind; i>=bottom_ind; i--) {
@@ -582,12 +587,24 @@ void Jet::SpecSimOMP(Solver & systemSolver, const vector<float> & partSpeeds,
 			// Simulate particle, add density profile to aggregate jet density, and   
 			// collision coordinate to aggregate collision density. 
 			tempSolver.ParticleSim(simSteps,dt,y,tempWeight,threadCount,didCollide,colLoc);
+			bool isNAN = false;
 			if(didCollide == true) {
 				colLoc[6] = weights[i] / numAzimuth;
-				threadCollision.push_back(colLoc);
+				for (int zz=0; zz<7; zz++) {
+					if (std::isnan(colLoc[zz]) ){
+						isNAN = true;
+					}
+				}
+				if (isNAN) {
+					std::cout << "Warning - NAN encountered in collisions (ignored).\n";
+				}
+				else {
+					threadCollision.push_back(colLoc);					
+				}
 			}
-			particlesLaunched = particlesLaunched + 1;
-
+			if (!isNAN) {
+				particlesLaunched = particlesLaunched + 1;
+			}
 		}
 		// Update master density and collision profiles.
 		#pragma omp critical
@@ -643,11 +660,8 @@ void Jet::MonteCarlo_Jet(Solver & systemSolver, const int & numSpeeds, const int
 	int particlesLaunched = 0, 
 		monteCarlo        = 1;
 
-	#ifdef _OPENMP
-		omp_set_num_threads(12);
-	#endif
-	#pragma omp parallel for reduction(+:particlesLaunched) schedule(dynamic)
 	// Loop over particle speeds.
+	#pragma omp parallel for reduction(+:particlesLaunched) schedule(dynamic)
 	for(int i=0; i<numSpeeds; i++) {
 		// Declare temporary variables
 		double *y = new double[CONST_numVariables];
@@ -701,11 +715,25 @@ void Jet::MonteCarlo_Jet(Solver & systemSolver, const int & numSpeeds, const int
 			// collision coordinate to aggregate collision density. 
 			tempSolver.ParticleSim(simSteps,dt,y,tempWeight,threadCount,collision,colLoc);
 
+			// Normalize impact weights to represent one particle, add to total count
+			bool isNAN = false;
 			if(collision == true) {
-				colLoc[6] = 1. / numAzimuth;
-				threadCollision.push_back(colLoc);
+				colLoc[6] = 1. / (numSpeeds * numAzimuth);
+				for (int zz=0; zz<7; zz++) {
+					if (std::isnan(colLoc[zz]) ){
+						isNAN = true;
+					}
+				}
+				if (isNAN) {
+					std::cout << "Warning - NAN encountered in collisions (ignored).\n";
+				}
+				else {
+					threadCollision.push_back(colLoc);					
+				}
 			}
-			particlesLaunched = particlesLaunched + 1;
+			if (!isNAN) {
+				particlesLaunched = particlesLaunched + 1;
+			}
 		}
 
 		// Update master density and collision profiles.
@@ -763,10 +791,6 @@ void Jet::CollisionMap(Solver & systemSolver, const vector<float> & partSpeeds,
 			break;
 		}
 	}
-
-	#ifdef _OPENMP
-		omp_set_num_threads(12);
-	#endif
 
 	// Loop over particle speeds.
 	#pragma omp parallel for reduction(+:particlesLaunched) schedule(dynamic)

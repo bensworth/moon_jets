@@ -259,6 +259,7 @@ int main(int argc, char *argv[])
 			coneData.push_back(temp);
 		}
 		getCone.close();
+		float d_inclination = coneData[1][0] - coneData[0][0];
 
 		// Load .csv of particle sizes.
 		vector<float> partSizes;
@@ -271,7 +272,6 @@ int main(int argc, char *argv[])
 			partSizes.push_back(temp*1000000.);	 // Convert to um
 		}
 		getSize.close();
-		float d_inclination = coneData[1][0] - coneData[0][0];
 
 		//-------------------------------- Initialize system --------------------------------//
 		

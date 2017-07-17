@@ -1,0 +1,92 @@
+0/8, OMP = 11
+1/8, OMP = 11
+2/8, OMP = 12
+3/8, OMP = 12
+4/8, OMP = 12
+6/8, OMP = 12
+5/8, OMP = 12
+7/8, OMP = 12
+Work distributed to worker 1 -- 273: 15
+Jet ID - -4, loc - (-72.9, 207.8, 3.7, 110)
+Received work order -- 1
+Work distributed to worker 2 -- 273: 14.5
+Work distributed to worker 3 -- 273: 14
+Received work order -- 3
+Received work order -- 2
+Work distributed to worker 7 -- 273: 13.5
+Work distributed to worker 5 -- 273: 13
+Received work order -- 7
+Received work order -- 5
+Work distributed to worker 4 -- 273: 12.5
+Received work order -- 4
+Work distributed to worker 6 -- 273: 12
+Received work order -- 6
+13507/27048 of the particles collided -- size: 0.602089, angle: 12
+Work distributed to worker 6 -- 273: 11.5
+Received work order -- 6
+13973/28152 of the particles collided -- size: 0.602089, angle: 12.5
+Work distributed to worker 4 -- 273: 11
+Received work order -- 4
+14480/29256 of the particles collided -- size: 0.602089, angle: 13
+Work distributed to worker 5 -- 273: 10.5
+Received work order -- 5
+14864/30176 of the particles collided -- size: 0.602089, angle: 13.5
+Work distributed to worker 7 -- 273: 10
+Received work order -- 7
+15300/31280 of the particles collided -- size: 0.602089, angle: 14
+Work distributed to worker 3 -- 273: 9.5
+Received work order -- 3
+15656/32200 of the particles collided -- size: 0.602089, angle: 14.5
+Work distributed to worker 2 -- 273: 9
+Received work order -- 2
+16104/33304 of the particles collided -- size: 0.602089, angle: 15
+Work distributed to worker 1 -- 273: 8.5
+Received work order -- 1
+9640/19504 of the particles collided -- size: 0.602089, angle: 8.5
+Received work order -- 1
+Work distributed to worker 1 -- 273: 8
+10829/21712 of the particles collided -- size: 0.602089, angle: 9.5
+Work distributed to worker 3 -- 273: 7.5
+Received work order -- 3
+10222/20608 of the particles collided -- size: 0.602089, angle: 9
+Work distributed to worker 2 -- 273: 7
+Received work order -- 2
+11448/22816 of the particles collided -- size: 0.602089, angle: 10
+Work distributed to worker 7 -- 273: 6.5
+Received work order -- 7
+12739/25024 of the particles collided -- size: 0.602089, angle: 11
+Work distributed to worker 4 -- 273: 6
+Received work order -- 4
+12084/23920 of the particles collided -- size: 0.602089, angle: 10.5
+Work distributed to worker 5 -- 273: 5.5
+Received work order -- 5
+13062/25944 of the particles collided -- size: 0.602089, angle: 11.5
+Work distributed to worker 6 -- 273: 5
+Received work order -- 6
+5638/11592 of the particles collided -- size: 0.602089, angle: 5
+Work distributed to worker 6 -- 273: 4.5
+Received work order -- 6
+6184/12696 of the particles collided -- size: 0.602089, angle: 5.5
+Work distributed to worker 5 -- 273: 4
+Received work order -- 5
+6735/13800 of the particles collided -- size: 0.602089, angle: 6
+Work distributed to worker 4 -- 273: 3.5
+Received work order -- 4
+7371/15088 of the particles collided -- size: 0.602089, angle: 6.5
+Work distributed to worker 7 -- 273: 3
+Received work order -- 7
+7921/16192 of the particles collided -- size: 0.602089, angle: 7
+Work distributed to worker 2 -- 273: 2.5
+Received work order -- 2
+8483/17296 of the particles collided -- size: 0.602089, angle: 7.5
+Work distributed to worker 3 -- 273: 2
+Received work order -- 3
+9064/18400 of the particles collided -- size: 0.602089, angle: 8
+Work distributed to worker 1 -- 273: 1.5
+Received work order -- 1
+3932/8096 of the particles collided -- size: 0.602089, angle: 3.5
+Work distributed to worker 4 -- 273: 1
+Received work order -- 4
+4554/9384 of the particles collided -- size: 0.602089, angle: 4
+Work distributed to worker 5 -- 273: 0.5
+Received work order -- 5
