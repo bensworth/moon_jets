@@ -3,12 +3,13 @@
 # unix-tools
 RM = rm -f
 
-LIB = -L/usr/local/lib
-INC = -I/usr/local/include
+LIB = -L/curc/sw/gsl/2.1/gcc/6.1.0/lib
+INC = -I/curc/sw/gsl/2.1/gcc/6.1.0/include
+LDFLAGS = -lgsl -lgslcblas
+CFLAGS    = $(INC) $(LIB) -g3 -fopenmp -Wall -Ofast
 
 # compiler
-CC = mpic++ -std=c++11 -fopenmp -Wall -lgsl -lgslcblas -Ofast
-CP = mpicc 
+CC = mpic++ -std=c++11
 
 SRCS  = genFunctions.cpp Solver.cpp Jet.cpp 
 SRCS1 = EncParallel.cpp
@@ -20,25 +21,22 @@ EXEC1 = EncPar
 OBJS2 = ${SRCS2:.cpp=.o}
 EXEC2 = EurPar
 
-INCLUDES  = 
-CFLAGS    = $(INCLUDES) -g3
-
 #.SUFFIXES :
 .SUFFIXES : .o .cpp .h
 
 all: $(EXEC1) $(EXEC2)
 
 .h.o:
-	$(CC) $(INCLUDES) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 .cpp.o:
-	$(CC) $(INCLUDES) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 $(EXEC1): $(OBJS) $(OBJS1) 
-	$(CC) $(OBJS) $(OBJS1) $(CFLAGS) -o $(EXEC1)
+	$(CC) $(LDFLAGS) $(OBJS) $(OBJS1) $(CFLAGS) -o $(EXEC1)
 
 $(EXEC2): $(OBJS) $(OBJS2)
-	$(CC) $(OBJS) $(OBJS2) $(CFLAGS) -o $(EXEC2)
+	$(CC) $(LDFLAGS) $(OBJS) $(OBJS2) $(CFLAGS) -o $(EXEC2)
 	
 Jet.o: genFunctions.o
 EncParallel.o: Jet.o Solver.o
