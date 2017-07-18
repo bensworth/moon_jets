@@ -4,7 +4,7 @@
 #SBATCH -o mpi_jet_con.out
 
 # Number of nodes, numNodes. Three processes are started on first node
-# (one master, two workers), and two worker  process on remaining numP0
+# (one master, two workers), and two worker process on remaining numP0
 # nodes.
 numNodes=$(cat $PBS_NODEFILE | wc -l)
 numP0=$(expr $numNodes + $numNodes - 2)
