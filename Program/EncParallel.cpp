@@ -359,80 +359,32 @@ int main(int argc, char *argv[])
 			MPI_Send(&rank, 1, MPI_INT, 0, requestTag, MPI_COMM_WORLD);
 			MPI_Recv(&sizeIndex, 1, MPI_INT, 0, radTag, MPI_COMM_WORLD, &status);
 
-
-			if (v_gas < 1) {
-				continue;
-			}
-
 			// If recieved work call, do said work. 
 			if(sizeIndex >= 0)  {
 				MPI_Recv(&angIndex, 1, MPI_INT, 0, angTag, MPI_COMM_WORLD, &status);
 			
-				if (abs(critRad - 0.6) < 1e-6) {
-					if (sizeIndex == 432) {
-						if (angIndex < 27) {
-							if (rank == 1) {
-								std::cout << "Skipping vgas = " << v_gas << ", rc = " << critRad << 
-											", size ind " << sizeIndex << ", ang ind " << angIndex << std::endl;
-							}
-							continue;
-						}
-					}
-					else if (sizeIndex < 437) {
-						if (rank == 1) {
-							std::cout << "Skipping vgas = " << v_gas << ", rc = " <<
-										critRad << ", size ind " << sizeIndex << std::endl;
-						}
-						continue;
-					}
-				}
-				else if (abs(critRad - 0.8) < 1e-6) {
-					if (sizeIndex == 373) {
-						if ((angIndex != 28) and (angIndex != 30)) {
-							if (rank == 1) {
-								std::cout << "Skipping vgas = " << v_gas << ", rc = " << critRad << 
-											", size ind " << sizeIndex << ", ang ind " << angIndex << std::endl;
-							}
-							continue;
-						}
-					}
-					else if (sizeIndex < 380) {
-						if (rank == 1) {
-							std::cout << "Skipping vgas = " << v_gas << ", rc = " <<
-										critRad << ", size ind " << sizeIndex << std::endl;
-						}
-						continue;
-					}
-				}
-				else if (abs(critRad - 1.0) < 1e-6) {
-					if (sizeIndex != 400) {
-						if (rank == 1) {
-							std::cout << "Skipping vgas = " << v_gas << ", rc = " <<
-										critRad << ", size ind " << sizeIndex << std::endl;
-						}
-						continue;
-					}
-				}
-
-				cout << "Received work order -- " << rank << ": rc = " << critRad << ", size ind = " <<
-					sizeIndex << ", ang ind = " << angIndex << std::endl;
-				
 				// Finalize solver initialization. 
 				systemSolver.SetSize(partSizes[sizeIndex]);
 				systemSolver.SetPlasma(moonPos[0], moonPos[1], moonPos[2]);
 
 				// Simulate Jet for given particle size. 
 				if (collisionOnly) {
+					cout << "Received work order -- " << rank << ": size ind = " <<
+							sizeIndex << ", ang ind = " << angIndex << std::endl;
 					Eruptor.CollisionMap(systemSolver, partSpeeds, partWeights[sizeIndex], coneData[angIndex],
 										 totalTime, volume, partSizes[sizeIndex], sizeIndex);
 				}
 				else if (montecarlo) {
+					cout << "Received work order -- " << rank << ": rc = " << critRad << ", vgas = " << vgas <<
+							", size ind = " << sizeIndex << ", ang ind = " << angIndex << std::endl;
 					float inclination = coneData[angIndex][0];
 					int   numAzimuth  = coneData[angIndex][1];
 					Eruptor.MonteCarlo_Jet(systemSolver, numSpeeds, numAzimuth, inclination, d_inclination,
 										   totalTime, volume, partSizes[sizeIndex], sizeIndex);
 				} 
 				else {
+					cout << "Received work order -- " << rank << ": size ind = " <<
+							sizeIndex << ", ang ind = " << angIndex << std::endl;
 					Eruptor.SpecSimOMP(systemSolver, partSpeeds, partWeights[sizeIndex], coneData[angIndex],
 									   totalTime, volume, partSizes[sizeIndex], sizeIndex);
 				}
