@@ -287,16 +287,11 @@ int main(int argc, char *argv[])
 		// Transform coordinate system. 
 		TransformSystem(moonPos,moonVel,pole);
 
-		// Solve for change of basis vectors.
-		vector<double> ex(3), ey(3), ez(3);
-		SetChangeBasis(moonPos,ex,ey,ez);
-
 		// Create solver.
 		Solver systemSolver;
 		systemSolver.SetNoCharging();							// No charging for Europa
 		systemSolver.SetIntegrator(extrapolate,errorTol);
 		systemSolver.SetPole(pole[0],pole[1],pole[2]);
-		systemSolver.SetChangeBasisVec(ex,ey,ez);
 
 		// Set Jet location (2 options from Roth et al).
 		vector<float> jetLocation;

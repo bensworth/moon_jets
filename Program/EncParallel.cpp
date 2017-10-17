@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 			  gridSize = 5.,		critRad = 0.2,  v_gas = 0.5,
 			  volume,	  			totalTime;
 
-		int   oneOrbit = 118442,	numSurfGrids = 100,		extrapolate  = 15, 
+		int   oneOrbit = 118442,	extrapolate  = 15, 
 			  xmin	   = -250,		xmax		 = 250, 	ymin		 = -250,
 			  ymax	   = 250,		zmin 		 = -1000, 	zmax 		 = 500,
 			  charging = 2,			numVariables = 13,		numSpeeds 	 = 100;
@@ -292,10 +292,6 @@ int main(int argc, char *argv[])
 		// Transform coordinate system. 
 		TransformSystem(moonPos,moonVel,pole);
 
-		// Solve for change of basis vectors.
-		vector<double> ex(3), ey(3), ez(3);
-		SetChangeBasis(moonPos,ex,ey,ez);
-
 		// Create solver.
 		Solver systemSolver;
 		systemSolver.SetCharge(partPot);
@@ -314,9 +310,7 @@ int main(int argc, char *argv[])
 		systemSolver.SetBfield(bFieldModel);
 		systemSolver.SetIntegrator(extrapolate,errorTol);
 		systemSolver.SetPole(pole[0],pole[1],pole[2]);
-		systemSolver.SetChangeBasisVec(ex,ey,ez);
 		systemSolver.CreateDensityGrid(xmin,xmax,ymin,ymax,zmin,zmax,gridSize);	
-		systemSolver.CreateSurfaceGrid(numSurfGrids);
 
 		// Create Jet.
 		Jet Eruptor;

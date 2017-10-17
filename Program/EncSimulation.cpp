@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 	// Integer values		
 	int	codeVersion = 10,		bFieldModel  = 1,		jetRef 	    = 1,
 		numCore     = 1,		charging 	 = 2,		jetNum      = 1,
-		data 	    = 1,		numSurfGrids = 100,		xmin 		= -250,	
+		data 	    = 1,		xmin 		= -250,	
 		xmax 		= 250,		ymin		 = -250,	ymax 	 	= 250,
 		zmin 		= -1000,	zmax 		 = 500,		numRings    = 14,
 		numPoints    = 40,		sizeIndex    = 300, 	orthogonal  = 0,
@@ -413,7 +413,6 @@ int main(int argc, char *argv[])
 	systemSolver.SetPole(pole[0],pole[1],pole[2]);
 	systemSolver.SetChangeBasisVec(ex,ey,ez);
 	systemSolver.CreateDensityGrid(xmin,xmax,ymin,ymax,zmin,zmax,gridSize);	
-	systemSolver.CreateSurfaceGrid(numSurfGrids);
 
 	// ---------------------------------------------------------------------------- //
 	// --------------------------- Read input arguments --------------------------- //

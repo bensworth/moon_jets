@@ -24,13 +24,10 @@ public:
 	void   SetCharge(const float & c);
 	void   SetSize(const float & r, const float & rho = 1.);
 	void   SetCharge2Mass();
-	void   SetChangeBasisVec(const vector<double> & ex, const vector<double> & ey,
-			const vector<double> & ez);
 	void   SetPlasma(const double & x, const double & y, const double & z);
 	void   CreateDensityGrid(const int & minX, const int & maxX, 
 			const int & minY, const int & maxY, const int & minZ, const int & maxZ,
 			const float & gridSize);
-	void   CreateSurfaceGrid(const int & numGrids);
 	void   CreateParticle(const int & steps, const double & dt, double *y, const int & data);
 	void   CheckCollision(const int & steps, const double & dt, double *y, const double & weight, 
 			 bool & collideMoon, vector<float> & whereCollide);
@@ -56,10 +53,6 @@ private:
 		   CONST_planIntegrate;
 	int    CONST_numVariables,
 		   m_change; 
-	// Vectors used to change from latitude/longitude moon system to inertial planetary frame.
-	vector<double> m_ex,
-				   m_ey,
-				   m_ez;
 	// Vectors to be used in solving steps of the equations. 
 	int    CONST_maxDiv;
 	double CONST_errTol;
@@ -165,7 +158,6 @@ private:
 			const double & Ey, const double & Ez);
 	void   Cartesian2Geog(vector<double> & collisionLocation);
 	long int GetDensityIndex(const double & x, const double & y, const double & z);
-	int    GetCollisionIndex(vector<double> & newColl);
 	double X2L(const double & x, const double & y, const double & z);
 	double Declination(const double & x, const double & y, const double & z, const double & vx,
 			const double & vy, const double & vz);

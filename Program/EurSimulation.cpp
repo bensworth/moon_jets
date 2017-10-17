@@ -390,17 +390,13 @@ int main(int argc, char *argv[])
 	}  
 	systemSolver.SetIntegrator(extrapolate, errorTol);
 	systemSolver.SetPole(pole[0],pole[1],pole[2]);
-	systemSolver.SetChangeBasisVec(ex,ey,ez);
 
-
-				xmin = -1000;
-			xmax = -800;
-			ymin = -100;
-			ymax = 100;
-			zmin = -2200;
-			zmax = -1200;
-
-
+	xmin = -1000;
+	xmax = -800;
+	ymin = -100;
+	ymax = 100;
+	zmin = -2200;
+	zmax = -1200;
 
 	systemSolver.CreateDensityGrid(xmin,xmax,ymin,ymax,zmin,zmax,gridSize);	
 
@@ -698,17 +694,6 @@ int main(int argc, char *argv[])
 		Eruptor.SetMaxAngle(maxInc);
 		Eruptor.SetGridData(xmin,xmax,ymin,ymax,zmin,zmax,gridSize);
 		Eruptor.SetSimulationData(jetNum,codeVersion,bFieldModel,charging,jetRef,numCore);
-
-
-
-		// float inclination = coneData[angIndex][0];
-		// int numAzimuth    = coneData[angIndex][1];
-		// int numSpeeds     = 2;
-		// Eruptor.MonteCarlo_Jet(systemSolver,numSpeeds,numAzimuth,inclination,
-		// 		d_inclination,totalTime,volume,partSizes[sizeIndex],sizeIndex);
-
-
-
 	}	
 	
 

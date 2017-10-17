@@ -189,16 +189,6 @@ void Solver::SetCharge2Mass()
 	CONST_Qd = .026562*CONST_potential/( CONST_partRad*CONST_partRad );
 }
 
-/* Function to set class vectors that were used to change from latitude/longitude moon */
-/* system to inertial planetary frame. 												   */
-void Solver::SetChangeBasisVec(const vector<double> & ex, const vector<double> & ey,
-	const vector<double> & ez)
-{
-	m_ex = ex;
-	m_ey = ey;
-	m_ez = ez;
-}
-
 /* Function to create a spatial grid centered about moon with cube side length */
 /* 'gridSize' and total grid size (+/- sizeX, +/- sizeY, [minZ,maxZ]). 		   */
 void Solver::CreateDensityGrid(const int & minX, const int & maxX, 
@@ -216,14 +206,6 @@ void Solver::CreateDensityGrid(const int & minX, const int & maxX,
 	m_Ny = (maxY - minY)/CONST_gridSize;
 }
 
-/* Function to set the number grid points we will use to discretize the surface of */
-/* the moon. Note, we let dx = dy = dz, i.e. grid areas are square. Sets size of   */
-/* grid based on size of the moon and number of desired grid points. 	    	   */
-void Solver::CreateSurfaceGrid(const int & numGrids)
-{
-	CONST_surfN = numGrids;
-	CONST_surfD = 2.*GLOBAL_radiusMoon/numGrids;
-}
 
 bool Solver::Abs_compare(const double & a, const double & b)
 {
@@ -294,39 +276,6 @@ long int Solver::GetDensityIndex(const double & x, const double & y, const doubl
 
 	long int ind   = (m_Nx*m_Ny*z_ind + m_Nx*y_ind + x_ind);
 	return ind;	
-}
-
-/* Function to update the surface collision density profile with a new location. Takes input:   */
-/* new impact location in Euclidean coordinates to include, and the current surface density     */
-/* profile as an unordered map, where the density profile is a cell index along with the number */
-/* of collisions in that cell. Function converts Euclidean coordinates to cell index, and       */
-/* updates unordered map of density profile. 					     						    */
-int Solver::GetCollisionIndex(vector<double> & newColl)
-{
-	// Project onto cube, translate face point lies in to a positive plane.  
-	auto biggest = max_element(newColl.begin(), newColl.end(), Abs_compare);
-	double maxEl = *biggest; 
-	int maxInd 	 = distance(newColl.begin(), biggest);
-	newColl.erase(biggest);
-	for(int i=0; i<2; i++) {
-		newColl[i] = GLOBAL_radiusMoon * (1. + newColl[i]/maxEl); 
-	}
-
-	// Determine which face of cube point lies on (see notes).  
-	int faceNum, localInd;
-	if(maxEl < 0) {
-		if(maxInd == 2) faceNum = 0; 
-		else if(maxInd == 1) faceNum = 2; 
-		else faceNum = 4;
-	}
-	else {
-		if(maxInd == 2) faceNum = 1;
-		else if(maxInd == 1) faceNum = 3;
-		else faceNum = 5;
-	}
-	// Get final index. 
-	localInd = (CONST_surfN - 1)*floor(newColl[0] / CONST_surfD) + floor(newColl[1] / CONST_surfD);
-	return faceNum*CONST_surfN*CONST_surfN + localInd;
 }
 
 /* Returns the dipole field L value at the observer location x. */
@@ -633,7 +582,7 @@ void Solver::SetPlasma(const double & x, const double & y, const double & z)
 
 	}
 
-	double m_p = 1.672621777e-27,	 // proton mass [kg] 
+	double m_p = 1.672621777e-27,	  // proton mass [kg] 
 		   m_e = 9.1093829140e-31,    // electron mass [kg]
 		   e   = 1.602e-19;           // elementary charge [C]
 	double m_w = 16. * m_p;           // water group ion mass [kg]
@@ -684,7 +633,7 @@ double Solver::phi2j(const double & phi, const double & v)
    double Mw  = m_plasma.Mw  * v;
 
 	// spherical particle emits 2 e_sec
-   double fes   = 3.7*2.*m_plasma.d_m;
+   double fes = 3.7*2.*m_plasma.d_m;
    
    // Declare current variables.
    double J_ec, J_eh, J_nu, J_p, J_w, J_sec, J_seh;
@@ -730,10 +679,6 @@ double Solver::phi2j(const double & phi, const double & v)
 		// secondary e- due to hot e- (Horanyi 1996 eq. 10)             
 		J_seh = fes*(-J_eh) * CONST_SpecialF_Xeh;
 	}
-   
-	// SAVING CURRENTS TO PLOT
-  	// vector<double> currents = {J_ec*1e19,J_eh*1e19,J_nu*1e19,J_p*1e19,J_w*1e19,J_sec*1e19,J_seh*1e19,phi,Mp,Mw};
-  	// m_currents.push_back(currents);
 
 	return J_ec + J_eh + J_nu + J_p + J_w + J_sec + J_seh;
 }

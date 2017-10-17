@@ -84,8 +84,9 @@ void Jet::SetInitCond(const vector<double> & pos, const vector<double> & vel)
 	Normalize(m_ey);
 	m_ex = Cross(m_ey, m_ez);
 	Normalize(m_ex);
-	// Since transformation is orthogonal, taking transpose we can trasnfer from
-	// moon frame to planet fram - Unit vector of jet's location in inertial frame.
+
+	// Since transformation is orthogonal, taking transpose we can transfer from
+	// moon frame to planet frame - Unit vector of jet's location in inertial frame.
 	m_jetPos = {cos(lon)*cos(lat)*m_ex[0] + sin(lon)*cos(lat)*m_ey[0],
 	            cos(lon)*cos(lat)*m_ex[1] + sin(lon)*cos(lat)*m_ey[1],
 				sin(lat)};

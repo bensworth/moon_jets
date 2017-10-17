@@ -1,21 +1,28 @@
 #!/bin/bash
-#SBATCH -N 2
-#SBATCH -t 1:00:00
-#SBATCH -o mpi_jet_con.out
-
-# Number of nodes, numNodes. Three processes are started on first node
-# (one master, two workers), and two worker process on remaining numP0
-# nodes.
-numNodes=$(cat $PBS_NODEFILE | wc -l)
-numP0=$(expr $numNodes + $numNodes - 2)
+#SBATCH --ntasks-per-node 16
+#SBATCH --nodes 2
+#SBATCH -t 01:00:00
+#SBATCH -o mpi_jet.out
+#SBATCH --partition shas 
+#SBATCH --qos debug
 
 # Make hostfile using names of nodes in $PBS_NODEFILE
 sh get_hostfile.sh
 
-for JETID in $(seq 1 $10); do
-	mpirun --hostfile hostfile_${SLURM_JOB_ID}.txt -np 3 -x OMP_NUM_THREADS=11 \
-			./EncPar -jetid $JETID -gridsize 2.5 -zmin -1000 -zmax 500 -nocharge \
-			>> ./output/jet${JETID}_connerey.csv : -np $numP0 -x OMP_NUM_THREADS=12 \
-			./EncPar -jetid $JETID -gridsize 2.5 -zmin -1000 -zmax 500 -nocharge >> \
-			./output/jet${JETID}_connerey.csv
+# Number of nodes, numNodes. Three processes are started on first node
+# (one master, two workers), and two worker process on remaining numP0
+# nodes.
+numNodes=$SLURM_JOB_NUM_NODES
+numP0=$(expr $numNodes + $numNodes - 2)
+
+RC=0.2
+VGAS=1.0
+
+for JETID in {10..11}
+do
+mpirun --hostfile hostfile_${SLURM_JOB_ID}.txt -np 3 -x OMP_NUM_THREADS=11 \
+                ./EncPar -jetid $JETID -gridsize 2.5 -zmin -1000 -zmax 500 -montecarlo -RC $RC -vgas $VGAS -nocharge \
+                >> ./output/jet${JETID}_rc${RC}_vgas${VGAS}.csv : -np $numP0 -x OMP_NUM_THREADS=12 \
+                ./EncPar -jetid $JETID -gridsize 2.5 -zmin -1000 -zmax 500 -montecarlo -RC $RC -vgas $VGAS -nocharge >> \
+                ./output/jet${JETID}_rc${RC}_vgas${VGAS}.csv
 done
