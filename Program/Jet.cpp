@@ -19,11 +19,11 @@
 using namespace std;
 using namespace genFunctions;
 
-#include "sys/types.h"
-#include "sys/sysinfo.h"
-    
 
-struct sysinfo memInfo;
+// TODO : do not think I use this anywhere, does not compile on mac
+// #include "sys/types.h"
+// #include "sys/sysinfo.h"
+// struct sysinfo memInfo;
 
 
 /* Constructor */

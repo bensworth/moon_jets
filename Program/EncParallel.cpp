@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 										 totalTime, volume, partSizes[sizeIndex], sizeIndex);
 				}
 				else if (montecarlo) {
-					cout << "Received work order -- " << rank << ": rc = " << critRad << ", vgas = " << vgas <<
+					cout << "Received work order -- " << rank << ": rc = " << critRad << ", vgas = " << v_gas <<
 							", size ind = " << sizeIndex << ", ang ind = " << angIndex << std::endl;
 					float inclination = coneData[angIndex][0];
 					int   numAzimuth  = coneData[angIndex][1];

@@ -2,6 +2,8 @@
 *metadata*
 ./Program/EncSim
 ./Program/EurSim
+./Program/EncPar
+./Program/EurPar
 *.o
 *.swp
 *.dvi
