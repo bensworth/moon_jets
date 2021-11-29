@@ -44,11 +44,9 @@
 using namespace std;
 using namespace genFunctions;
 
-#include "sys/types.h"
-#include "sys/sysinfo.h"
-    
-
-struct sysinfo memInfo;
+// #include "sys/types.h"
+// #include "sys/sysinfo.h"
+// struct sysinfo memInfo;
 
 
 /* Constructor */
