@@ -44,11 +44,11 @@
 using namespace std;
 using namespace genFunctions;
 
+#include "sys/types.h"
+#include "sys/sysinfo.h"
+    
 
-// TODO : do not think I use this anywhere, does not compile on mac
-// #include "sys/types.h"
-// #include "sys/sysinfo.h"
-// struct sysinfo memInfo;
+struct sysinfo memInfo;
 
 
 /* Constructor */
@@ -894,106 +894,6 @@ void Jet::CollisionMap(Solver & systemSolver, const vector<float> & partSpeeds,
 		partRad << ", angle: " << inclination << endl;
 }
 
-
-/* Simulate specific vector of speeds and azimuth angles, for a fixed inclination to the jet */
-/* directional vector. Save binary output. Uses Open MP Parallelization. 			         */
-void Jet::HoverSimOMP(Solver & systemSolver,
-	const vector<double> & weights, const vector<float> & angleData,
-	const float & partRad, const int & partRadId, double initVel)
-{
-	// Initialize variables for computing and storing density profile and collision locations. 
-	systemSolver.SetSize(partRad);
-	SetNoCharging.SetMaxAngle( TODO );			// TODO :  this will probably go in driver.
-	SetNoCharging.SetMaxAltitude( TODO );		// TODO :  this will probably go in driver.
-
-	vector<float> densCount(systemSolver.GetSizeDataCone());
-	float inclination = angleData[0],
-		  numAzimuth  = angleData[1],
-		  dphi 		  = 360./angleData[1];
-	int particlesLaunched = 0;
-
-
-	// TODO : need weight to uniformly weight cosine distribution over angle
-
-
-	// Declare OMP parallelism outside of loop so can construct objects
-	// once and reuse,
-	#pragma omp parallel
-	{
-	Solver tempSolver = systemSolver;
-	// Declare inner OMP variables
-	double *y = new double[CONST_numVariables];
-	unordered_map<long int,pair<float,float> > threadCount; 
-	vector<vector<float> > threadCollision;
-
-
-	// Parallel loop over azimuthal angles
-	#pragma omp for reduction(+:particlesLaunched) schedule(static)
-	for (int i=0; i<systemSolver.GetNumAzimuth(); i++) {
-
-		// Define time step and number of steps as a function of initial velocity
-		// and gridsize. Include time step in residence time weight. Let dt <=60. 
-		// Normalize weight with number of azimuth samplings and grid volume.
-		double dt = 0.5 * m_gridSize_dx / initVel;
-		if(dt > 60) dt = 60.0;
-		int simSteps      = ceil(totalTime/dt);
-		double tempWeight = weights[i] * dt / (volume*numAzimuth);
-
-		// Loop over polar (inclination) angles
-		for (int j=0; i<systemSolver.GetNumPolar(); j++) {
-			// Update azimuth and inclination angle and get velocity direction vector.
-			bool didCollide = false;
-			float azimuth  = j*dphi;
-			vector<double> ejecDir(3); 
-			vector<float>  colLoc(7);
-			ejecDir = Jet::GetEjecVelocity(azimuth,inclination);
-
-			// Update initial conditions. 
-			y[0]  = m_parPos[0];
-			y[1]  = m_parPos[1];
-			y[2]  = m_parPos[2];
-			y[3]  = m_parNonEjVel[0] + initVel*ejecDir[0];
-			y[4]  = m_parNonEjVel[1] + initVel*ejecDir[1];
-			y[5]  = m_parNonEjVel[2] + initVel*ejecDir[2];
-			y[6]  = m_moonPos[0];
-			y[7]  = m_moonPos[1];
-			y[8]  = m_moonPos[2];
-			y[9]  = m_moonVel[0];
-			y[10] = m_moonVel[1];
-			y[11] = m_moonVel[2];
-			if(CONST_numVariables == 13) {
-				y[12] = 0.;
-			}
-			// Simulate particle, add density profile to aggregate jet density, and   
-			// collision coordinate to aggregate collision density. 
-			tempSolver.HoverSim(dt,y,tempWeight,threadCount);
-		}
-		delete [] y; 
-	}
-
-	// Update master density and collision profiles.
-	// TODO : update this; in previous simulations it made sense to update
-	// master data every iteration, here we can update after the pragma loop.
-	#pragma omp critical
-	{
-		Jet::UpdateDensity(threadCount, densCount);
-		threadCount.clear();
-		collisions.insert(collisions.end(),threadCollision.begin(),threadCollision.end());
-		threadCollision.clear();
-	}
-
-	} // end of OMP
-
-	// Save density profile
-	Jet::DensityWrite(densCount,inclination,numAzimuth,partRadId);
-
-	// Save collision data
-	int particlesCollided = collisions.size();
-	Jet::CollisionWrite(collisions,inclination,particlesLaunched,particlesCollided, partRadId);
-
-	cout << particlesCollided << "/" << particlesLaunched << " of the particles collided -- size: " <<
-		partRad << ", angle: " << inclination << endl;
-}
 
 
 

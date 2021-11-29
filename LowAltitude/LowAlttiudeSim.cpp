@@ -71,14 +71,14 @@ int main(int argc, char *argv[])
             charging     = 0;
             numVariables = 12;
         }
-        else if(strcmp(argv[i],"-gridsize") == 0) {
-            i += 1;
-            gridSize = atof(argv[i]);
-        }
+        // else if(strcmp(argv[i],"-gridsize") == 0) {
+        //     i += 1;
+        //     gridSize = atof(argv[i]);
+        // }
         else if(strcmp(argv[i],"-numAzimuth") == 0)
         {
             i += 1;
-            numSpeeds = atoi(argv[i]);
+            numAzimuth = atoi(argv[i]);
         }
         else if(strcmp(argv[i],"-radius") == 0)
         {
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     systemSolver.SetSize(partSizes[partRad_ind]);
     systemSolver.SetPlasma(moonPos[0], moonPos[1], moonPos[2]);
 
-    Eruptor.HoverSim(systemSolver, numAzimuth, partRad_ind,
+    Eruptor.HoverSimOMP(systemSolver, numAzimuth, partRad_ind,
         partSizes[partRad_ind], initVel_ind, partSpeeds[initVel_ind]);
 
     return 0;

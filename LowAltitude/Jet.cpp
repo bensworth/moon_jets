@@ -440,7 +440,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
 
         // TODO : ideally, use 2-3 inclination angles / bin for more data.
-        double inc_weight = 
+        // double inc_weight = 
+        double inc_weight = 1.0;
         double tempWeight = inc_weight * dt / (numAzimuth);
 
 
