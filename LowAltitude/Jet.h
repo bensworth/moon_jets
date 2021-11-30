@@ -175,10 +175,14 @@ private:
             att_azimuth.write(dint, &numAzimuth);    // Write data to dataset
         }
         // catch failures
-        catch( FileIException error ) { error.printErrorStack(); } // H5File operations error
-        catch( DataSetIException error ) { error.printErrorStack(); } // DataSet operations error
-        catch( DataSpaceIException error ) { error.printErrorStack(); } // DataSpace operations errpr
-        catch( DataTypeIException error ) { error.printErrorStack(); } // DataSpace operations error
+        //catch( FileIException error ) { error.printErrorStack(stderr,H5E_DEFAULT); } // H5File operations error
+        //catch( DataSetIException error ) { error.printErrorStack(); } // DataSet operations error
+        //catch( DataSpaceIException error ) { error.printErrorStack(); } // DataSpace operations errpr
+        //catch( DataTypeIException error ) { error.printErrorStack(); } // DataSpace operations error
+        catch( FileIException error ) { } // H5File operations error
+        catch( DataSetIException error ) { } // DataSet operations error
+        catch( DataSpaceIException error ) { } // DataSpace operations errpr
+        catch( DataTypeIException error ) { } // DataSpace operations error
     }
 };
 
