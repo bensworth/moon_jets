@@ -59,8 +59,8 @@ int main(int argc, char *argv[])
           charging = 2,     // Full particle charging
           numVariables,
           numAzimuth = 100,
-          partRad_ind = -1,
-          initVel_ind = -1;
+          partRad_ind = 0,
+          initVel_ind = 0;
     int   orthogonal = 1,
           bFieldModel  = 1, // Connerey charging model
           jet_ind = -1;
@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 
     // Create solver.
     Solver systemSolver;
+    
     systemSolver.SetCharge(partPot);
     if(charging == 0) {
         numVariables = 12;
@@ -152,22 +153,22 @@ int main(int argc, char *argv[])
     systemSolver.SetBfield(bFieldModel);
     systemSolver.SetIntegrator(extrapolate,errorTol);
     systemSolver.SetPole(pole[0],pole[1],pole[2]);
+    systemSolver.SetSize(partSizes[partRad_ind]);
+    systemSolver.SetPlasma(moonPos[0], moonPos[1], moonPos[2]);
 
     // Create Jet.
     Jet Eruptor;
     vector<float> jetLocation{-90.0, 0, 0, 0};
 
-    // Set speed distribution if running monte Carlo simulation
+    // Set jet parameters
     Eruptor.SetNumVariables(numVariables);
     Eruptor.SetLocation(jetLocation[0],jetLocation[1],jetLocation[2],jetLocation[3]);
     Eruptor.SetInitCond(moonPos,moonVel);
 
-    //-------------------------------- Update and simulate jet --------------------------------//
+    std::cout << "Particle radius = " << partSizes[partRad_ind] << " um,\n"
+        << "Initial particle speed = " << partSpeeds[initVel_ind] << " km/s\n";
 
-    // Finalize solver initialization. 
-    systemSolver.SetSize(partSizes[partRad_ind]);
-    systemSolver.SetPlasma(moonPos[0], moonPos[1], moonPos[2]);
-
+    //-------------------------------- Simulate jet --------------------------------//
     Eruptor.HoverSimOMP(systemSolver, numAzimuth, partRad_ind,
         partSizes[partRad_ind], initVel_ind, partSpeeds[initVel_ind]);
 

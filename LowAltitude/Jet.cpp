@@ -47,6 +47,7 @@ using namespace genFunctions;
 
 // Const array size variables; must be defined in cpp file, not header file
 // These are hard coded for low altitude simulations.
+#if 0
 const int Jet::m_nr = 196;
 const int Jet::m_nphi = 45;
 const int Jet::m_nvr = 35;
@@ -56,6 +57,21 @@ const float Jet::m_max_altitude = 5;
 const float Jet::m_max_velocity = 0.7;
 const float Jet::m_max_rphi = 15;
 const float Jet::m_max_vphi = 90;
+#else
+// DEBUG
+const int Jet::m_nr = 10;
+const int Jet::m_nphi = 10;
+const int Jet::m_nvr = 10;
+const int Jet::m_nvphi = 10;
+const float Jet::m_min_altitude = 0.1;
+const float Jet::m_max_altitude = 5;
+const float Jet::m_max_velocity = 0.7;
+const float Jet::m_max_rphi = 15;
+const float Jet::m_max_vphi = 90;
+// DEBUG
+#endif
+
+
 
 /* Constructor */
 Jet::Jet() : m_dataID(0), m_dr((m_max_altitude - m_min_altitude) / m_nr),
@@ -401,6 +417,8 @@ void Jet::UpdateDensity(unordered_map<long int,pair<float,float> > & local,
 void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
     const float &partRad, const int &initVel_ind, const float &initVel)
 {
+    std::cout << "In Jet file\n";
+    
     // Initialize variables for computing and storing density profile and collision locations. 
     systemSolver.SetSize(partRad);
     float dphi = 360. / numAzimuth;
@@ -413,6 +431,10 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // NOTE : ordering here is different than inner data; inner arrays are
     // ordered for efficiency, this array is ordered for later conveniuence.
     float residenceTime[m_nr][m_nphi][m_nvr][m_nvphi] = {0};
+
+#if 1
+
+    std::cout << "Starting hover sim\n";
 
     // Declare OMP parallelism outside of loop so can construct objects
     // once and reuse,
@@ -429,6 +451,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // storing data in effectively a 2d space-velocity grid, all azimuthal
     // angles for a fixed inclination should traverse similar data bins.
     for (int j=0; j<m_nphi; j++) {
+
+        std::cout << "Inclination angle " << j << "\n";
 
         // Define time step as function of initial velocity and gridsize
         // to ensure particle is counted in most cells it traverses
@@ -448,6 +472,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         // Loop over azimuthal angles
         for (int i=0; i<numAzimuth; i++) {
             
+            std::cout << "Azimuthal angle " << i << "\n";
+
             // Update azimuth and inclination angle and get velocity direction vector.
             float azimuth  = i*dphi;
             vector<double> ejecDir(3); 
@@ -472,7 +498,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             }
             // Simulate particle, add density profile to aggregate jet density, and   
             // collision coordinate to aggregate collision density. 
-            tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
+            // tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
         }
     }
     delete [] y;
@@ -546,14 +572,20 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // DEBUG
     // Check that volumes sum to volume of entire cone for vel/location
     temp = m_max_altitude*m_max_altitude*m_max_altitude - m_min_altitude*m_min_altitude*m_min_altitude;
-    double vvol = (2*PI/3.0) * temp * (std::cos(m_max_rphi*DEG2RAD) - std::cos(PI));
+    double rvol = (2*PI/3.0) * temp * (std::cos((180-m_max_rphi)*DEG2RAD) - std::cos(PI));
     temp = m_max_velocity*m_max_velocity*m_max_velocity;
-    double rvol = (2*PI/3.0) * temp * (std::cos(m_max_vphi*DEG2RAD) - std::cos(PI));
-    if (std::abs(vvol - vtotal_vol) > 1e-5) {
-        std::cout << "\n\nWARNING, velocity volumes do not match!! Exact = " << vvol << ", sum = " << vtotal_vol << "\n\n";
-    }
+    double vvol = (2*PI/3.0) * temp * (std::cos(m_max_vphi*DEG2RAD) - std::cos(PI));
     if (std::abs(rvol - rtotal_vol) > 1e-5) {
-        std::cout << "\n\nWARNING, spatial volumes do not match!! Exact = " << rvol << ", sum = " << rtotal_vol << "\n\n";
+        std::cout << "\t\tWARNING, spatial volumes do not match!! Exact = " << rvol << ", sum = " << rtotal_vol << "\n";
+    }
+    else {
+        std::cout << "\t\tTotal spatial volume = " << rvol << "\n";
+    }
+    if (std::abs(vvol - vtotal_vol) > 1e-5) {
+        std::cout << "\t\tWARNING, velocity volumes do not match!! Exact = " << vvol << ", sum = " << vtotal_vol << "\n";
+    }
+    else {
+        std::cout << "\t\tTotal velocity volume = " << vvol << "\n";
     }
     // DEBUG
     
@@ -569,10 +601,11 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             }
         }
     }
+#endif
 
     // Save density profile
-    Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
-        partRad, initVel_ind, initVel);
+    // Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
+    //     partRad, initVel_ind, initVel);
 }
 
 
