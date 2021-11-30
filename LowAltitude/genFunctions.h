@@ -30,6 +30,8 @@
 #include <cmath>
 using namespace std;
 
+// If C_ARRAY=1, use 4d static C arrays for data. Does not work on moderate to
+// large data sets due to stack overflow.
 #define C_ARRAY 0
 
 namespace genFunctions

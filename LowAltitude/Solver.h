@@ -154,18 +154,18 @@ public:
 
             // Check if particle outside of data cone in terms of inclination angle
             // or altitude.
-            if (phi_r > CONST_max_rphi || std::abs(partPos_z) > CONST_max_altitude) {
+            if (phi_r > CONST_max_rphi || r_p > CONST_max_altitude) {
                 within_grid = false;
-                if (phi_r > CONST_max_rphi)
-                    std::cout << "Exited grid, phi = " << phi_r*RAD2DEG << ", max angle = " << CONST_max_rphi*RAD2DEG << "\n";
-                else
-                    std::cout << "Exited grid, z = " << partPos_z << ", max altitude = " << CONST_max_altitude << "\n";
-                    std::cout << "vphi = " << phi_v*RAD2DEG << ", rphi = " << phi_r*RAD2DEG << ", "
-                        << "vel = " << r_v << "\n";
-                break;
+                //if (phi_r > CONST_max_rphi)
+                //    std::cout << "Exited grid, phi = " << phi_r*RAD2DEG << ", max angle = " << CONST_max_rphi*RAD2DEG << "\n";
+                //else
+                //    std::cout << "Exited grid, z = " << partPos_z << ", max altitude = " << CONST_max_altitude << "\n";
+                //    std::cout << "vphi = " << phi_v*RAD2DEG << ", rphi = " << phi_r*RAD2DEG << ", "
+                //        << "vel = " << r_v << "\n";
+                //break;
             }
             // Only track density for particles above minimum alttiude of grid
-            else if (std::abs(partPos_z) < CONST_min_altitude) {
+            else if (r_p < CONST_min_altitude) {
                 continue;
             }
 
@@ -175,7 +175,8 @@ public:
             if (ind[0] > nvphi) std::cout << "v_phi ind = " << ind[0] << ", max = " << nvphi << "\n";
             else if (ind[1] > nphi) std::cout << "r_phi ind = " << ind[1] << ", max = " << nphi << "\n";
             else if (ind[2] > nvr) std::cout << "|v| ind = " << ind[2] << ", max = " << nvr << "\n";
-            else if (ind[3] > nr) std::cout << "|r| ind = " << ind[3] << ", max = " << nr << "\n";
+            else if (ind[3] > nr) std::cout << "|r| ind = " << ind[3] << ", max = " << nr <<
+                ", max alt = " << CONST_max_altitude << ", alt = " << r_p << "\n";
             else {
 #if C_ARRAY
                 flux[ind[0]][ind[1]][ind[2]][ind[3]] += weight;

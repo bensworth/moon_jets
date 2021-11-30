@@ -47,7 +47,7 @@ using namespace genFunctions;
 
 // Const array size variables; must be defined in cpp file, not header file
 // These are hard coded for low altitude simulations.
-#if 0
+#if 1
 const int Jet::m_nr = 196;
 const int Jet::m_nphi = 45;
 const int Jet::m_nvr = 35;
