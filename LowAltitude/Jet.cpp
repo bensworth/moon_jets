@@ -454,8 +454,9 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // angles for a fixed inclination should traverse similar data bins.
     for (int j=0; j<m_nphi; j++) {
 
-        #pragma omp critical
-        { std::cout << "Inclination angle " << j << "\n"; }
+        // DEBUG PRINT
+        // #pragma omp critical
+        // { std::cout << "Inclination angle " << j << "\n"; }
 
         // Define time step as function of initial velocity and gridsize
         // to ensure particle is counted in most cells it traverses
@@ -528,6 +529,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
     } // end of OMP
 
+    std::cout << "Total particles simulated: " << numAzimuth * m_nphi << "\n";
+
     // DEBUG: make sure total volume matches sum over cells in data cone
     double vtotal_vol = 0;
     double rtotal_vol = 0;
@@ -579,16 +582,16 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     temp = m_max_velocity*m_max_velocity*m_max_velocity;
     double vvol = (2*PI/3.0) * temp * (std::cos(m_max_vphi*DEG2RAD) - std::cos(PI));
     if (std::abs(rvol - rtotal_vol) > 1e-5) {
-        std::cout << "\t\tWARNING, spatial volumes do not match!! Exact = " << rvol << ", sum = " << rtotal_vol << "\n";
+        std::cout << "\tWARNING, spatial volumes do not match!! Exact = " << rvol << ", sum = " << rtotal_vol << "\n";
     }
     else {
-        std::cout << "\t\tTotal spatial volume = " << rvol << "\n";
+        std::cout << "\tTotal spatial volume = " << rvol << "\n";
     }
     if (std::abs(vvol - vtotal_vol) > 1e-5) {
-        std::cout << "\t\tWARNING, velocity volumes do not match!! Exact = " << vvol << ", sum = " << vtotal_vol << "\n";
+        std::cout << "\tWARNING, velocity volumes do not match!! Exact = " << vvol << ", sum = " << vtotal_vol << "\n";
     }
     else {
-        std::cout << "\t\tTotal velocity volume = " << vvol << "\n";
+        std::cout << "\tTotal velocity volume = " << vvol << "\n";
     }
     
     // Normalize residenceTime based on 6d-cell volume
