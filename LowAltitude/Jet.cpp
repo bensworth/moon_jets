@@ -59,9 +59,9 @@ const float Jet::m_max_rphi = 15;
 const float Jet::m_max_vphi = 90;
 #else
 // DEBUG
-const int Jet::m_nr = 10;
-const int Jet::m_nphi = 10;
-const int Jet::m_nvr = 10;
+const int Jet::m_nr = 20;
+const int Jet::m_nphi = 45;
+const int Jet::m_nvr = 15;
 const int Jet::m_nvphi = 10;
 const float Jet::m_min_altitude = 0.1;
 const float Jet::m_max_altitude = 5;
@@ -416,9 +416,7 @@ void Jet::UpdateDensity(unordered_map<long int,pair<float,float> > & local,
 /* directional vector. Save binary output. Uses Open MP Parallelization.                     */
 void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
     const float &partRad, const int &initVel_ind, const float &initVel)
-{
-    std::cout << "In Jet file\n";
-    
+{   
     // Initialize variables for computing and storing density profile and collision locations. 
     systemSolver.SetSize(partRad);
     float dphi = 360. / numAzimuth;
@@ -431,10 +429,6 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // NOTE : ordering here is different than inner data; inner arrays are
     // ordered for efficiency, this array is ordered for later conveniuence.
     float residenceTime[m_nr][m_nphi][m_nvr][m_nvphi] = {0};
-
-#if 1
-
-    std::cout << "Starting hover sim\n";
 
     // Declare OMP parallelism outside of loop so can construct objects
     // once and reuse,
@@ -452,7 +446,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // angles for a fixed inclination should traverse similar data bins.
     for (int j=0; j<m_nphi; j++) {
 
-        std::cout << "Inclination angle " << j << "\n";
+        #pragma omp critical
+        { std::cout << "Inclination angle " << j << "\n"; }
 
         // Define time step as function of initial velocity and gridsize
         // to ensure particle is counted in most cells it traverses
@@ -462,17 +457,13 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         // center of interval, e.g., 0.5 for m_dphi = 1 and j=0.
         double inclination = (j + 0.5) * m_dphi;
 
-
         // TODO : ideally, use 2-3 inclination angles / bin for more data.
         // double inc_weight = 
         double inc_weight = 1.0;
         double tempWeight = inc_weight * dt / (numAzimuth);
 
-
         // Loop over azimuthal angles
         for (int i=0; i<numAzimuth; i++) {
-            
-            std::cout << "Azimuthal angle " << i << "\n";
 
             // Update azimuth and inclination angle and get velocity direction vector.
             float azimuth  = i*dphi;
@@ -498,7 +489,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             }
             // Simulate particle, add density profile to aggregate jet density, and   
             // collision coordinate to aggregate collision density. 
-            // tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
+            tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
         }
     }
     delete [] y;
@@ -520,7 +511,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
     } // end of OMP
 
-    // DEBUG
+    // DEBUG: make sure total volume matches sum over cells in data cone
     double vtotal_vol = 0;
     double rtotal_vol = 0;
     // DEBUG
@@ -569,7 +560,6 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         }
     }
 
-    // DEBUG
     // Check that volumes sum to volume of entire cone for vel/location
     temp = m_max_altitude*m_max_altitude*m_max_altitude - m_min_altitude*m_min_altitude*m_min_altitude;
     double rvol = (2*PI/3.0) * temp * (std::cos((180-m_max_rphi)*DEG2RAD) - std::cos(PI));
@@ -587,7 +577,6 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     else {
         std::cout << "\t\tTotal velocity volume = " << vvol << "\n";
     }
-    // DEBUG
     
     // Normalize residenceTime based on 6d-cell volume
     double temp_vol;
@@ -597,15 +586,18 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
                 for (int l = 0; l < m_nvphi; l++) {
                     temp_vol = m_locVolume[i][j] * m_velVolume[k][l];
                     residenceTime[i][j][k][l] /= temp;
+                    if (residenceTime[i][j][k][l] > 0) {
+                        std::cout << "r[" << i << "," << j << "," << k << "," << l << 
+                        "] = " << residenceTime[i][j][k][l] << "\n";
+                    }
                 }
             }
         }
     }
-#endif
 
     // Save density profile
-    // Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
-    //     partRad, initVel_ind, initVel);
+    Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
+        partRad, initVel_ind, initVel);
 }
 
 

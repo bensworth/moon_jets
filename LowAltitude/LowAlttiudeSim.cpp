@@ -75,17 +75,17 @@ int main(int argc, char *argv[])
         //     i += 1;
         //     gridSize = atof(argv[i]);
         // }
-        else if(strcmp(argv[i],"-numAzimuth") == 0)
+        else if(strcmp(argv[i],"-naz") == 0)
         {
             i += 1;
             numAzimuth = atoi(argv[i]);
         }
-        else if(strcmp(argv[i],"-radius") == 0)
+        else if(strcmp(argv[i],"-r") == 0)
         {
             i += 1;
             partRad_ind = atoi(argv[i]);
         }
-        else if(strcmp(argv[i],"-speed") == 0)
+        else if(strcmp(argv[i],"-s") == 0)
         {
             i += 1;
             initVel_ind = atoi(argv[i]);

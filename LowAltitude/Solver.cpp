@@ -251,15 +251,14 @@ void Solver::CreateDistributionGrid(const float &min_alt,
         CONST_num_altitude;
     CONST_max_velocity = max_vel;
     CONST_num_velocity = num_vel;
-    m_d_velocity = (int) CONST_max_velocity / 
-        CONST_num_velocity;
+    m_d_velocity = max_vel / num_vel;
 
     // Grids for opening angles
-    CONST_max_rphi = max_rphi * PI / 180.0;
+    CONST_max_rphi = max_rphi * DEG2RAD;
     CONST_rphi = num_rphi;
     m_rdphi = CONST_max_rphi / CONST_rphi;
 
-    CONST_max_vphi = max_vphi * PI / 180.0;
+    CONST_max_vphi = max_vphi * DEG2RAD;
     CONST_vphi = num_vphi;
     m_vdphi = CONST_max_vphi / CONST_vphi;
 }
@@ -312,13 +311,13 @@ void Solver::Transform(float & Px, float & Py, float & Pz, const double & Mx,
 /* pointing towards Saturn.                                                               */
 void Solver::TransformSpherical(float & Pd, float & Ptheta, float & Pphi,
     float & Px, float & Py, float & Pz, const double & Mx, const double & My,
-    const double & Mz)
+    const double & Mz, bool shift_z)
 {
     // Transform particle to euclidean coordinates centered at moon.
     Transform(Px, Py, Pz, Mx, My, Mz);
 
     // Shift z-coordinate to = 0 at Enceladus' south pole
-    Pz += GLOBAL_radiusMoon;
+    if (shift_z) Pz += GLOBAL_radiusMoon;
 
     // Transform euclidean coordiantes to spherical
     Pd = sqrt(Px*Px + Py*Py + Pz*Pz);
@@ -367,10 +366,10 @@ std::vector<int> Solver::GetDistributionIndex(const float &alt,
 {   
     // Grid index in ordering <vphi, phi, vr, r>
     std::vector<int> ind(4);
-    ind[0] = floor( vphi / m_vdphi );       // location inclination index
+    ind[0] = floor( vphi / m_vdphi );       // velocity inclination index
     ind[1] = floor( rphi / m_rdphi );       // location inclination index
-    ind[2] = floor( vel / m_d_velocity );   // velocity index
-    ind[3] = floor( (alt-CONST_min_altitude) / m_d_altitude );  // altitude index
+    ind[2] = floor( std::abs(vel) / m_d_velocity );   // velocity index
+    ind[3] = floor( (std::abs(alt)-CONST_min_altitude) / m_d_altitude );  // altitude index
     return ind; 
 }
 

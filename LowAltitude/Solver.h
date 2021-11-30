@@ -119,17 +119,42 @@ public:
             partPos_z = y[2] - y[8];
             float r_p, phi_r, r_v, phi_v, temp;
             Solver::TransformSpherical(r_p, temp, phi_r, partPos_x,
-                partPos_y,partPos_z,y[6],y[7],y[8]);
+                partPos_y,partPos_z,y[6],y[7],y[8], true);
             partVel_x = y[3] - y[9];
             partVel_y = y[4] - y[10];
             partVel_z = y[5] - y[11];
             Solver::TransformSpherical(r_v, temp, phi_v, partVel_x,
-                partVel_y,partVel_z,y[6],y[7],y[8]);
+                partVel_y,partVel_z,y[6],y[7],y[8], false);
+                // partVel_y,partVel_z,y[9],y[10],y[11], false);
+
+            // DEBUG TEST: transform w.r.t. moon position or velocity basis?
+            // - Speed and inclination indifferent to this transformation,
+            //   which probably means moon-velocity basis functions are the
+            //   same as moon-position basis functions
+            // partVel_x = y[3] - y[9];
+            // partVel_y = y[4] - y[10];
+            // partVel_z = y[5] - y[11];
+            // float test_v, test_phi;
+            // Solver::TransformSpherical(test_v, temp, test_phi, partVel_x,
+            //     // partVel_y,partVel_z,y[6],y[7],y[8], false);
+            //     partVel_y,partVel_z,y[9],y[10],y[11], false);
+            // test_phi = PI - test_phi;
+            // DEBUG TEST
+
+            // Treat opening angle as away from negative vertical axis
+            phi_r = PI - phi_r;
+            phi_v = PI - phi_v;
 
             // Check if particle outside of data cone in terms of inclination angle
             // or altitude.
-            if (phi_r > CONST_max_rphi || std::abs(partPos_z) < CONST_max_altitude) {
+            if (phi_r > CONST_max_rphi || std::abs(partPos_z) > CONST_max_altitude) {
                 within_grid = false;
+                if (phi_r > CONST_max_rphi)
+                    std::cout << "Exited grid, phi = " << phi_r*RAD2DEG << ", max angle = " << CONST_max_rphi*RAD2DEG << "\n";
+                else
+                    std::cout << "Exited grid, z = " << partPos_z << ", max altitude = " << CONST_max_altitude << "\n";
+                    std::cout << "vphi = " << phi_v*RAD2DEG << ", rphi = " << phi_r*RAD2DEG << ", "
+                        << "vel = " << r_v << "\n";
                 break;
             }
             // Only track density for particles above minimum alttiude of grid
@@ -138,8 +163,15 @@ public:
             }
 
             // Add weighted residence time to space-velocity residence time profile
-            std::vector<int> ind = Solver::GetDistributionIndex(r_p, phi_r, r_v, phi_v);
-            flux[ind[0]][ind[1]][ind[2]][ind[3]] += weight;
+            std::vector<int> ind = Solver::GetDistributionIndex(r_p, phi_r, r_v, phi_v);   
+            // DEBUG: make sure indices are not out of range
+            if (ind[0] > nvphi) std::cout << "v_phi ind = " << ind[0] << ", max = " << nvphi << "\n";
+            else if (ind[1] > nphi) std::cout << "r_phi ind = " << ind[1] << ", max = " << nphi << "\n";
+            else if (ind[2] > nvr) std::cout << "|v| ind = " << ind[2] << ", max = " << nvr << "\n";
+            else if (ind[3] > nr) std::cout << "|r| ind = " << ind[3] << ", max = " << nr << "\n";
+            else {
+                flux[ind[0]][ind[1]][ind[2]][ind[3]] += weight;
+            }
         }
         // Set CONST_numVariables and associated variables to inital status if equilibrium
         // charge was reached.
@@ -286,7 +318,7 @@ private:
             const double & My, const double & Mz);
     void TransformSpherical(float & Pd, float & Ptheta, float & Pphi,
             float & Px, float & Py, float & Pz, const double & Mx, const double & My,
-            const double & Mz);
+            const double & Mz, bool shift_z);
     void   Cartesian2Geog(vector<double> & collisionLocation);
     long int GetDensityIndex(const double & x, const double & y, const double & z);
     std::vector<int> GetDistributionIndex(const float &alt, const float &rphi,
