@@ -30,6 +30,8 @@
 #include <cmath>
 using namespace std;
 
+#define C_ARRAY 0
+
 namespace genFunctions
 {
 	/* --------------------------- Declare constants --------------------------- */
@@ -67,6 +69,7 @@ namespace genFunctions
 	void 		   InitializeDust(double *currentState,  vector<double> ex,  vector<double> ey, 
 		 			vector<double> ez, const float & initVel, const float & latitude,
 					const float & longitude, const float &inc = 0, const float &azimuth = 0);
+	int get4dind(int i, int j, int k, int l, int n1, int n2, int n3, int n4);
 
 
 	template<typename T>

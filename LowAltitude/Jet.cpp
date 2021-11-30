@@ -428,7 +428,11 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // Allocate master data array
     // NOTE : ordering here is different than inner data; inner arrays are
     // ordered for efficiency, this array is ordered for later conveniuence.
+#if C_ARRAY
     float residenceTime[m_nr][m_nphi][m_nvr][m_nvphi] = {0};
+#else
+    std::unique_ptr<float[]> residenceTime = std::make_unique<float[]>(m_nr*m_nphi*m_nvr*m_nvphi);
+#endif
 
     // Declare OMP parallelism outside of loop so can construct objects
     // once and reuse,
@@ -437,7 +441,11 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     Solver tempSolver = systemSolver;
     // Declare inner OMP variables
     double *y = new double[CONST_numVariables];
+#if C_ARRAY
     float threadResidenceTime[m_nvphi][m_nphi][m_nvr][m_nr] = {0};
+#else
+    std::unique_ptr<float[]> threadResidenceTime = std::make_unique<float[]>(m_nvphi*m_nphi*m_nvr*m_nr);
+#endif
 
     #pragma omp for schedule(static)
     // OpenMP Parallel Loop over inclination angles
@@ -489,7 +497,11 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             }
             // Simulate particle, add density profile to aggregate jet density, and   
             // collision coordinate to aggregate collision density. 
+#if C_ARRAY
             tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
+#else
+            tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime,m_nvphi,m_nphi,m_nvr,m_nr);
+#endif
         }
     }
     delete [] y;
@@ -502,7 +514,12 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             for (int j = 0; j < m_nphi; j++) {
                 for (int k = 0; k < m_nvr; k++) {
                     for (int l = 0; l < m_nvphi; l++) {
+#if C_ARRAY
                         residenceTime[i][j][k][l] += threadResidenceTime[l][j][k][i];
+#else
+                        residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] +=
+                            threadResidenceTime[get4dind(l,j,k,i,m_nvphi,m_nphi,m_nvr,m_nr)];
+#endif
                     }
                 }
             }
@@ -530,9 +547,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         for (int j=0; j<m_nvphi; j++) {
             phi1 = phi0 - dvphi_rad;
             m_velVolume[i][j] = (2*PI/3.0) * temp * (std::cos(phi1) - std::cos(phi0));
-
             vtotal_vol += m_velVolume[i][j];    // DEBUG: sum volume
-
             m_velVolume[i][j] *= 1e9;   // Convert to m^3 here for numerical stabillity
             phi0 = phi1;
         }
@@ -552,9 +567,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         for (int j=0; j<m_nphi; j++) {
             phi1 = phi0 - dphi_rad;
             m_locVolume[i][j] = (2*PI/3.0) * temp * (std::cos(phi1) - std::cos(phi0));
-            
             rtotal_vol += m_locVolume[i][j];    // DEBUG: sum volume 
-
             m_locVolume[i][j] *= 1e9;   // Convert to m^3 here for numerical stabillity
             phi0 = phi1;
         }
@@ -585,19 +598,24 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             for (int k = 0; k < m_nvr; k++) {
                 for (int l = 0; l < m_nvphi; l++) {
                     temp_vol = m_locVolume[i][j] * m_velVolume[k][l];
+#if C_ARRAY
                     residenceTime[i][j][k][l] /= temp;
-                    if (residenceTime[i][j][k][l] > 0) {
-                        std::cout << "r[" << i << "," << j << "," << k << "," << l << 
-                        "] = " << residenceTime[i][j][k][l] << "\n";
-                    }
+#else
+                    residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] /= temp;
+#endif
                 }
             }
         }
     }
 
     // Save density profile
+#if C_ARRAY
     Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
         partRad, initVel_ind, initVel);
+#else
+    Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
+        partRad, initVel_ind, initVel);
+#endif
 }
 
 

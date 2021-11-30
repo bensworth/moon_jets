@@ -26,10 +26,12 @@
 #ifndef JETHEADERDEF
 #define JETHEADERDEF
 class Solver;
+#include <memory>
 #include <unordered_map>
 #include "H5Cpp.h"
 using namespace H5;
 using namespace std;
+using namespace genFunctions;
 
 class Jet
 {
@@ -126,11 +128,23 @@ private:
            unordered_map<long int,pair<float,float> > & aggregate);
 
     // TODO : check ordering; why is dataset.write() different than dataspace.write?
+#if C_ARRAY
     template <size_t nr, size_t nphi, size_t nvr, size_t nvphi>
     void HDF5DistWrite(float (&residenceTime)[nr][nphi][nvr][nvphi],
         const int &numAzimuth, const int &partRad_ind, const float &partRad,
         const int &initVel_ind, const float &initVel)
     {
+        if ( (m_nr!=nr) || (m_nphi!=nphi) || (m_nvr!=nvr) || (m_nvphi!=nvphi) )
+        {
+            std::cout << "WARNING: dimensions to not match in HDF5 write.\n";
+            return;
+        }
+#else
+    void HDF5DistWrite(std::unique_ptr<float[]> &residenceTime,
+        const int &numAzimuth, const int &partRad_ind, const float &partRad,
+        const int &initVel_ind, const float &initVel)
+    {
+#endif    
         // Try block to detect exceptions raised by any of the calls inside it
         try
         {
@@ -149,12 +163,15 @@ private:
 
             // 4d array storage
             int ndims = 4;
-            hsize_t dim4[4] = {nr, nphi, nvr, nvphi};  // dataset dimensions
+            hsize_t dim4[4] = {m_nr,m_nphi,m_nvr,m_nvphi};  // dataset dimensions
             DataSpace dataspace4d(ndims, dim4);                  // Create data space w/ given dims
             dataset_name = "residence_time";
             DataSet dataset2d = file.createDataSet(dataset_name, dfloat, dataspace4d);
+#if C_ARRAY
             dataset2d.write(residenceTime, dfloat);    // Write data to dataset (works w/ array a[][][])
-
+#else
+            dataset2d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
+#endif
             // Particle radius attribute
             dataset_name = "particle_radius"; 
             hsize_t dim1[1] = {1};   // dataset dimensions

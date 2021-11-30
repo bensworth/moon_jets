@@ -26,6 +26,7 @@
 #ifndef SOLVERHEADERDEF
 #define SOLVERHEADERDEF
 #include <unordered_map>
+#include <memory>
 #include <vector>
 using namespace std;
 using namespace genFunctions;
@@ -75,9 +76,15 @@ public:
     // in CreateDistributionGrid, GetDistributionIndex, and HoverSim checking if in grid.
     //
     //
+#if C_ARRAY
     template <size_t nvphi, size_t nphi, size_t nvr, size_t nr>
     void HoverSim(const double & dt, double *y,
         const double & weight, float (&flux)[nvphi][nphi][nvr][nr])
+#else
+    void HoverSim(const double & dt, double *y,
+        const double & weight, std::unique_ptr<float[]> &flux,
+        int nvphi, int nphi, int nvr, int nr)
+#endif
     {
         if (CONST_max_rphi < 0) {
             std::cout << "Must call CreateDistributionGrid(...) first!\n";
@@ -170,7 +177,11 @@ public:
             else if (ind[2] > nvr) std::cout << "|v| ind = " << ind[2] << ", max = " << nvr << "\n";
             else if (ind[3] > nr) std::cout << "|r| ind = " << ind[3] << ", max = " << nr << "\n";
             else {
+#if C_ARRAY
                 flux[ind[0]][ind[1]][ind[2]][ind[3]] += weight;
+#else
+                flux[get4dind(ind[0],ind[1],ind[2],ind[3],nvphi,nphi,nvr,nr)] += weight;
+#endif
             }
         }
         // Set CONST_numVariables and associated variables to inital status if equilibrium
