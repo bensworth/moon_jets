@@ -145,6 +145,14 @@ namespace genFunctions{
 		return sqrt(N);
 	}
 
+	// Get 4d indices for flattened 1d array. Must have
+	//		0<=i<n1, 0<=j<n2, 0<=k<n3, 0<=l<n4
+	// with array dimensions n1 x n2 x n3 x n4 
+	int get4dind(int i, int j, int k, int l, int n1, int n2, int n3, int n4)
+	{
+	    return i*n2*n3*n4 + j*n3*n4 + k*n4 + l;
+	}
+
 	/* Function to perform quaternion multiplication on quaternions Q1 = (w1,V1), */
 	/* Q2 = (w2,V2), for angles w1,w2 and vector parts V1,V2. */
 	vector<double> QuatMult(const vector<double> & Q1, const vector<double> & Q2)
