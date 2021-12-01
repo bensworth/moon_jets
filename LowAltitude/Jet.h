@@ -286,32 +286,32 @@ private:
             dataset_phi.write(angs, dfloat);
 
             // Particle radius attribute
-            dataset_name = "particle radius"; 
+            dataset_name = "particle_radius"; 
             hsize_t dim1[1] = {1}; 
             DataSpace radius_dspace(1, dim1);
             Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
             att_radius.write(dfloat, &partRad);
 
             // Particle speed attribute
-            dataset_name = "initial speed"; 
+            dataset_name = "initial_speed"; 
             DataSpace speed_dspace(1, dim1);
             Attribute att_speed = file.createAttribute (dataset_name, dfloat, speed_dspace);
             att_speed.write(dfloat, &initVel);
 
             // Number azimuth attribute
-            dataset_name = "number azimuth angles"; 
+            dataset_name = "number_azimuth_angles"; 
             DataSpace azimuth_dspace(1, dim1);
             Attribute att_azimuth = file.createAttribute (dataset_name, dint, azimuth_dspace);
             att_azimuth.write(dint, &numAzimuth);
 
             // Total particles simulated
-            dataset_name = "total particles simulated"; 
+            dataset_name = "total_particles_simulated"; 
             DataSpace nparticles_dspace(1, dim1);
             Attribute att_nparticles = file.createAttribute (dataset_name, dint, nparticles_dspace);
             att_nparticles.write(dint, &total_particles);
 
             // One-particle residuence time
-            dataset_name = "one-particle residence time"; 
+            dataset_name = "one-particle_residence_time"; 
             DataSpace time_dspace(1, dim1);
             Attribute att_time = file.createAttribute (dataset_name, dint, time_dspace);
             att_time.write(dint, &one_time);
