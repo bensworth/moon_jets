@@ -437,6 +437,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
     // Declare OMP parallelism outside of loop so can construct objects
     // once and reuse,
+    double total_inc_weight = 0.0;
     #pragma omp parallel
     {
     Solver tempSolver = systemSolver;
@@ -449,7 +450,6 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 #endif
 
 
-    double total_inc_weight = 0.0;
     #pragma omp for schedule(static) reduction( + : total_inc_weight )
     // OpenMP Parallel Loop over inclination angles
     // - here we use inclination for the OpenMP because since we are
@@ -540,7 +540,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
     } // end of OMP
 
-    std::cout << "Total particles simulated: " << numAzimuth * m_nphi <<
+    std::cout << "Total particles simulated: " << numAzimuth * m_nphi * num_inner_inc <<
     ", total inclination weight: " << total_inc_weight << "\n";
 
     // DEBUG: make sure total volume matches sum over cells in data cone
