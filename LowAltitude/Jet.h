@@ -55,7 +55,7 @@ public:
           const int & gridMax_y, const int & gridMin_z, const int & gridMax_z,
           const float & gridSize_dx);
     void HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
-    const float &partRad, const int &initVel_ind, const float &initVel);
+    const float &partRad, const int &initVel_ind, const float &initVel, const int &num_inner_inc);
 
 private:
 

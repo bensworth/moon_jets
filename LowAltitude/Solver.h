@@ -132,7 +132,6 @@ public:
             partVel_z = y[5] - y[11];
             Solver::TransformSpherical(r_v, temp, phi_v, partVel_x,
                 partVel_y,partVel_z,y[6],y[7],y[8], false);
-                // partVel_y,partVel_z,y[9],y[10],y[11], false);
 
             // DEBUG TEST: transform w.r.t. moon position or velocity basis?
             // - Speed and inclination indifferent to this transformation,

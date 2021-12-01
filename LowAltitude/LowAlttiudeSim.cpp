@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
           numVariables,
           numAzimuth = 100,
           partRad_ind = 0,
-          initVel_ind = 0;
+          initVel_ind = 0,
+          num_inner_inc = 3;
     int   orthogonal = 1,
           bFieldModel  = 1, // Connerey charging model
           jet_ind = -1;
@@ -170,7 +171,8 @@ int main(int argc, char *argv[])
 
     //-------------------------------- Simulate jet --------------------------------//
     Eruptor.HoverSimOMP(systemSolver, numAzimuth, partRad_ind,
-        partSizes[partRad_ind], initVel_ind, partSpeeds[initVel_ind]);
+        partSizes[partRad_ind], initVel_ind, partSpeeds[initVel_ind],
+        num_inner_inc);
 
     return 0;
 }

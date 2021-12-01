@@ -415,11 +415,12 @@ void Jet::UpdateDensity(unordered_map<long int,pair<float,float> > & local,
 /* Simulate specific vector of speeds and azimuth angles, for a fixed inclination to the jet */
 /* directional vector. Save binary output. Uses Open MP Parallelization.                     */
 void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
-    const float &partRad, const int &initVel_ind, const float &initVel)
+    const float &partRad, const int &initVel_ind, const float &initVel, const int &num_inner_inc)
 {   
     // Initialize variables for computing and storing density profile and collision locations. 
     systemSolver.SetSize(partRad);
-    float dphi = 360. / numAzimuth;
+    float dtheta = 360. / numAzimuth;
+    double phimax_rad = m_max_rphi*DEG2RAD;
 
     // Construct dist_grid in Solver object
     systemSolver.CreateDistributionGrid(m_min_altitude, m_max_altitude,
@@ -447,62 +448,72 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     std::unique_ptr<float[]> threadResidenceTime = std::make_unique<float[]>(m_nvphi*m_nphi*m_nvr*m_nr);
 #endif
 
-    #pragma omp for schedule(static)
+
+    double total_inc_weight = 0.0;
+    #pragma omp for schedule(static) reduction( + : total_inc_weight )
     // OpenMP Parallel Loop over inclination angles
     // - here we use inclination for the OpenMP because since we are
     // storing data in effectively a 2d space-velocity grid, all azimuthal
     // angles for a fixed inclination should traverse similar data bins.
     for (int j=0; j<m_nphi; j++) {
 
-        // DEBUG PRINT
-        // #pragma omp critical
-        // { std::cout << "Inclination angle " << j << "\n"; }
-
         // Define time step as function of initial velocity and gridsize
         // to ensure particle is counted in most cells it traverses
-        double dt = 0.5 * m_dr / initVel;
+        double dt = 0.25 * m_dr / initVel;
 
-        // Inclination of ejection direction from orthogonal; take as
-        // center of interval, e.g., 0.5 for m_dphi = 1 and j=0.
-        double inclination = (j + 0.5) * m_dphi;
+        // Loop over innr step sizes of inclination angle within larger grid bin
+        // This is to increase fidelity of data for a given bin (outer loop)
+        for (int jj=0; jj<num_inner_inc; jj++) {
 
-        // TODO : ideally, use 2-3 inclination angles / bin for more data.
-        // double inc_weight = 
-        double inc_weight = 1.0;
-        double tempWeight = inc_weight * dt / (numAzimuth);
+            // Inclination of ejection direction from orthogonal; take as
+            // center of interval, e.g., 0.5 for m_dphi = 1 and j=0.
+            double tphi0 = j*m_dphi + jj*m_dphi/num_inner_inc;
+            double tphi1 = j*m_dphi + (jj+1.0)*m_dphi/num_inner_inc;
+            double inclination = (tphi1 + tphi0) / 2.0;
 
-        // Loop over azimuthal angles
-        for (int i=0; i<numAzimuth; i++) {
+            // double inc_weight = 
+            tphi1 *= DEG2RAD;   // Convert to radians for normalization
+            tphi0 *= DEG2RAD;   // Convert to radians for normalization
+            double inc_weight = ( (tphi1-tphi0)*PI + phimax_rad*sin(PI*tphi1/phimax_rad) -
+                phimax_rad*sin(PI*tphi0/phimax_rad) ) / (PI * phimax_rad);
+            double tempWeight = inc_weight * dt / (numAzimuth);
 
-            // Update azimuth and inclination angle and get velocity direction vector.
-            float azimuth  = i*dphi;
-            vector<double> ejecDir(3); 
-            vector<float>  colLoc(7);
-            ejecDir = Jet::GetEjecVelocity(azimuth,inclination);
+            // DEBUG : confirm inclination weights sum to one
+            total_inc_weight += inc_weight;
 
-            // Update initial conditions. 
-            y[0]  = m_parPos[0];
-            y[1]  = m_parPos[1];
-            y[2]  = m_parPos[2];
-            y[3]  = m_parNonEjVel[0] + initVel*ejecDir[0];
-            y[4]  = m_parNonEjVel[1] + initVel*ejecDir[1];
-            y[5]  = m_parNonEjVel[2] + initVel*ejecDir[2];
-            y[6]  = m_moonPos[0];
-            y[7]  = m_moonPos[1];
-            y[8]  = m_moonPos[2];
-            y[9]  = m_moonVel[0];
-            y[10] = m_moonVel[1];
-            y[11] = m_moonVel[2];
-            if(CONST_numVariables == 13) {
-                y[12] = 0.;
+            // Loop over azimuthal angles
+            for (int i=0; i<numAzimuth; i++) {
+
+                // Update azimuth and inclination angle and get velocity direction vector.
+                float azimuth  = i * dtheta;
+                vector<double> ejecDir(3); 
+                vector<float>  colLoc(7);
+                ejecDir = Jet::GetEjecVelocity(azimuth,inclination);
+
+                // Update initial conditions. 
+                y[0]  = m_parPos[0];
+                y[1]  = m_parPos[1];
+                y[2]  = m_parPos[2];
+                y[3]  = m_parNonEjVel[0] + initVel*ejecDir[0];
+                y[4]  = m_parNonEjVel[1] + initVel*ejecDir[1];
+                y[5]  = m_parNonEjVel[2] + initVel*ejecDir[2];
+                y[6]  = m_moonPos[0];
+                y[7]  = m_moonPos[1];
+                y[8]  = m_moonPos[2];
+                y[9]  = m_moonVel[0];
+                y[10] = m_moonVel[1];
+                y[11] = m_moonVel[2];
+                if(CONST_numVariables == 13) {
+                    y[12] = 0.;
+                }
+                // Simulate particle, add density profile to aggregate jet density, and   
+                // collision coordinate to aggregate collision density. 
+            #if C_ARRAY
+                tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
+            #else
+                tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime,m_nvphi,m_nphi,m_nvr,m_nr);
+            #endif
             }
-            // Simulate particle, add density profile to aggregate jet density, and   
-            // collision coordinate to aggregate collision density. 
-#if C_ARRAY
-            tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
-#else
-            tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime,m_nvphi,m_nphi,m_nvr,m_nr);
-#endif
         }
     }
     delete [] y;
@@ -515,12 +526,12 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             for (int j = 0; j < m_nphi; j++) {
                 for (int k = 0; k < m_nvr; k++) {
                     for (int l = 0; l < m_nvphi; l++) {
-#if C_ARRAY
+                    #if C_ARRAY
                         residenceTime[i][j][k][l] += threadResidenceTime[l][j][k][i];
-#else
+                    #else
                         residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] +=
                             threadResidenceTime[get4dind(l,j,k,i,m_nvphi,m_nphi,m_nvr,m_nr)];
-#endif
+                    #endif
                     }
                 }
             }
@@ -601,11 +612,11 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             for (int k = 0; k < m_nvr; k++) {
                 for (int l = 0; l < m_nvphi; l++) {
                     temp_vol = m_locVolume[i][j] * m_velVolume[k][l];
-#if C_ARRAY
+                #if C_ARRAY
                     residenceTime[i][j][k][l] /= temp;
-#else
+                #else
                     residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] /= temp;
-#endif
+                #endif
                 }
             }
         }
