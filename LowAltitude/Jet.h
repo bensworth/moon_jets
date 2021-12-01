@@ -216,7 +216,7 @@ private:
 
             // Create file; H5F_ACC_TRUNC means if the file exists, open as
             // read only, otherwise create new file
-            std::string  file_name = "./data/EncResidenceTime_r" + std::to_string(partRad_ind) +
+            std::string  file_name = "./data/EncFlux_r" + std::to_string(partRad_ind) +
                 "_s" + std::to_string(initVel_ind) + ".hdf5";
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;

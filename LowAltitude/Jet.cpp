@@ -541,8 +541,10 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
     } // end of OMP
 
-    std::cout << "Total particles simulated: " << numAzimuth * m_nphi * num_inner_inc <<
-    ", total inclination weight: " << total_inc_weight << "\n";
+    std::cout << "Total particles simulated: " << numAzimuth * m_nphi * num_inner_inc << "\n";
+    if (std::abs(total_inc_weight-1) > 1e-5) {
+        std::cout << "WARNING: total inclination weights do not sum to one!\n";
+    }
 
     // DEBUG: make sure total volume matches sum over cells in data cone
     double vtotal_vol = 0;
