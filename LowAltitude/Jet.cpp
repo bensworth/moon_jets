@@ -46,8 +46,6 @@ using namespace genFunctions;
 
 
 // Const array size variables; must be defined in cpp file, not header file
-// These are hard coded for low altitude simulations.
-#if 1
 const int Jet::m_nr = 196;
 const int Jet::m_nphi = 45;
 const int Jet::m_nvr = 35;
@@ -57,21 +55,6 @@ const float Jet::m_max_altitude = 5;
 const float Jet::m_max_velocity = 0.7;
 const float Jet::m_max_rphi = 15;
 const float Jet::m_max_vphi = 90;
-#else
-// DEBUG
-const int Jet::m_nr = 20;
-const int Jet::m_nphi = 45;
-const int Jet::m_nvr = 15;
-const int Jet::m_nvphi = 10;
-const float Jet::m_min_altitude = 0.1;
-const float Jet::m_max_altitude = 5;
-const float Jet::m_max_velocity = 0.7;
-const float Jet::m_max_rphi = 15;
-const float Jet::m_max_vphi = 90;
-// DEBUG
-#endif
-
-
 
 /* Constructor */
 Jet::Jet() : m_dataID(0), m_dr((m_max_altitude - m_min_altitude) / m_nr),
@@ -647,6 +630,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         }
     }
 
+    int total_particles = numAzimuth * m_nphi * num_inner_inc;
+
     // Use quadrature routine to map residence time to flux profile, only
     // export flux to HDF5
     if (compute_flux) {
@@ -683,7 +668,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         std::cout << "Writing flux to HDF5 not implemented for C-style arrays.\n";
     #else
         Jet::HDF5FluxWrite(flux, numAzimuth, partRad_ind,
-            partRad, initVel_ind, initVel);
+            partRad, initVel_ind, initVel, total_particles, total_res_time);
     #endif
     }
     // Export full 4d residence time profile to HDF5

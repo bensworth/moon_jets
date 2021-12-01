@@ -149,6 +149,16 @@ private:
         // Try block to detect exceptions raised by any of the calls inside it
         try
         {
+            // Altitude and angle at cell center of grid
+            float alts[m_nr];
+            for (int i=0; i<m_nr; i++) {
+                alts[i] = m_min_altitude + (i+0.5)*m_dr;
+            }
+            float angs[m_nphi];
+            for (int i=0; i<m_nr; i++) {
+                angs[i] = (i+0.5)*m_dr;
+            }
+
             // Turn off the auto-printing when failure occurs so that we can
             // handle the errors appropriately
             Exception::dontPrint();
@@ -165,32 +175,49 @@ private:
             // 4d array storage
             int ndims = 4;
             hsize_t dim4[4] = {m_nr,m_nphi,m_nvr,m_nvphi};  // dataset dimensions
-            DataSpace dataspace4d(ndims, dim4);                  // Create data space w/ given dims
+            DataSpace dataspace4d(ndims, dim4);             // Create data space w/ given dims
             dataset_name = "residence_time";
             DataSet dataset4d = file.createDataSet(dataset_name, dfloat, dataspace4d);
 #if C_ARRAY
             dataset4d.write(residenceTime, dfloat);    // Write data to dataset (works w/ array a[][][])
 #else
-            dataset4d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
+            dataset4d.write(residenceTime.get(), dfloat);
 #endif
+
+            // Save cell-centered altitude array
+            ndims = 1;
+            hsize_t dim_alt[1] = {m_nr};
+            DataSpace dataspace_alts(ndims, dim_alt);
+            dataset_name = "altitudes";
+            DataSet dataset_alts = file.createDataSet(dataset_name, dfloat, dataspace_alts);
+            dataset_alts.write(alts, dfloat);
+
+            // Save cell-centered inclination array
+            ndims = 1;
+            hsize_t dim_phi[1] = {m_nphi};
+            DataSpace dataspace_phi(ndims, dim_phi);
+            dataset_name = "inclinations";
+            DataSet dataset_phi = file.createDataSet(dataset_name, dfloat, dataspace_phi);
+            dataset_phi.write(angs, dfloat);
+
             // Particle radius attribute
-            dataset_name = "particle_radius"; 
-            hsize_t dim1[1] = {1};   // dataset dimensions
-            DataSpace radius_dspace(1, dim1);  // Create data space w/ given dims
+            dataset_name = "particle radius"; 
+            hsize_t dim1[1] = {1}; 
+            DataSpace radius_dspace(1, dim1);
             Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
-            att_radius.write(dfloat, &partRad);    // Write data to dataset
+            att_radius.write(dfloat, &partRad);
 
             // Particle speed attribute
-            dataset_name = "initial_speed"; 
-            DataSpace speed_dspace(1, dim1);  // Create data space w/ given dims
+            dataset_name = "initial speed"; 
+            DataSpace speed_dspace(1, dim1);
             Attribute att_speed = file.createAttribute (dataset_name, dfloat, speed_dspace);
-            att_speed.write(dfloat, &initVel);    // Write data to dataset
+            att_speed.write(dfloat, &initVel);
 
             // Number azimuth attribute
-            dataset_name = "number_azimuth"; 
-            DataSpace azimuth_dspace(1, dim1);  // Create data space w/ given dims
+            dataset_name = "number azimuth angles"; 
+            DataSpace azimuth_dspace(1, dim1);
             Attribute att_azimuth = file.createAttribute (dataset_name, dint, azimuth_dspace);
-            att_azimuth.write(dint, &numAzimuth);    // Write data to dataset
+            att_azimuth.write(dint, &numAzimuth);
         }
         // catch failures
         //catch( FileIException error ) { error.printErrorStack(stderr,H5E_DEFAULT); } // H5File operations error
@@ -205,8 +232,19 @@ private:
 
     void HDF5FluxWrite(std::unique_ptr<float[]> &residenceTime,
         const int &numAzimuth, const int &partRad_ind, const float &partRad,
-        const int &initVel_ind, const float &initVel)
+        const int &initVel_ind, const float &initVel, const int &total_particles,
+        const float &one_time)
     {
+        // Altitude and angle at cell center of grid
+        float alts[m_nr];
+        for (int i=0; i<m_nr; i++) {
+            alts[i] = m_min_altitude + (i+0.5)*m_dr;
+        }
+        float angs[m_nphi];
+        for (int i=0; i<m_nr; i++) {
+            angs[i] = (i+0.5)*m_dr;
+        }
+
         // Try block to detect exceptions raised by any of the calls inside it
         try
         {
@@ -223,32 +261,60 @@ private:
             FloatType dfloat(PredType::NATIVE_FLOAT);  // Native C++ Float32
             IntType dint(PredType::NATIVE_INT);        // Native C++ Int
 
-            // 4d array storage
+            // Save flux array
             int ndims = 2;
-            hsize_t dim4[2] = {m_nr,m_nphi};  // dataset dimensions
-            DataSpace dataspace2d(ndims, dim4);                  // Create data space w/ given dims
+            hsize_t dim4[2] = {m_nr,m_nphi};        // dataset dimensions
+            DataSpace dataspace2d(ndims, dim4);     // Create data space w/ given dims
             dataset_name = "flux";
             DataSet dataset2d = file.createDataSet(dataset_name, dfloat, dataspace2d);
             dataset2d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
 
+            // Save cell-centered altitude array
+            ndims = 1;
+            hsize_t dim_alt[1] = {m_nr};
+            DataSpace dataspace_alts(ndims, dim_alt);
+            dataset_name = "altitudes";
+            DataSet dataset_alts = file.createDataSet(dataset_name, dfloat, dataspace_alts);
+            dataset_alts.write(alts, dfloat);
+
+            // Save cell-centered inclination array
+            ndims = 1;
+            hsize_t dim_phi[1] = {m_nphi};
+            DataSpace dataspace_phi(ndims, dim_phi);
+            dataset_name = "inclinations";
+            DataSet dataset_phi = file.createDataSet(dataset_name, dfloat, dataspace_phi);
+            dataset_phi.write(angs, dfloat);
+
             // Particle radius attribute
-            dataset_name = "particle_radius"; 
-            hsize_t dim1[1] = {1};   // dataset dimensions
-            DataSpace radius_dspace(1, dim1);  // Create data space w/ given dims
+            dataset_name = "particle radius"; 
+            hsize_t dim1[1] = {1}; 
+            DataSpace radius_dspace(1, dim1);
             Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
-            att_radius.write(dfloat, &partRad);    // Write data to dataset
+            att_radius.write(dfloat, &partRad);
 
             // Particle speed attribute
-            dataset_name = "initial_speed"; 
-            DataSpace speed_dspace(1, dim1);  // Create data space w/ given dims
+            dataset_name = "initial speed"; 
+            DataSpace speed_dspace(1, dim1);
             Attribute att_speed = file.createAttribute (dataset_name, dfloat, speed_dspace);
-            att_speed.write(dfloat, &initVel);    // Write data to dataset
+            att_speed.write(dfloat, &initVel);
 
             // Number azimuth attribute
-            dataset_name = "number_azimuth"; 
-            DataSpace azimuth_dspace(1, dim1);  // Create data space w/ given dims
+            dataset_name = "number azimuth angles"; 
+            DataSpace azimuth_dspace(1, dim1);
             Attribute att_azimuth = file.createAttribute (dataset_name, dint, azimuth_dspace);
-            att_azimuth.write(dint, &numAzimuth);    // Write data to dataset
+            att_azimuth.write(dint, &numAzimuth);
+
+            // Total particles simulated
+            dataset_name = "total particles simulated"; 
+            DataSpace nparticles_dspace(1, dim1);
+            Attribute att_nparticles = file.createAttribute (dataset_name, dint, nparticles_dspace);
+            att_nparticles.write(dint, &total_particles);
+
+            // One-particle residuence time
+            dataset_name = "one-particle residence time"; 
+            DataSpace time_dspace(1, dim1);
+            Attribute att_time = file.createAttribute (dataset_name, dint, time_dspace);
+            att_time.write(dint, &one_time);
         }
         // catch failures
         //catch( FileIException error ) { error.printErrorStack(stderr,H5E_DEFAULT); } // H5File operations error
