@@ -98,26 +98,26 @@ int main(int argc, char *argv[])
     // Check for valid radii and speed indices
     if (partRad_ind > (numRadii-1)) {
         std::cout << "Invalid particle radius, must be between [0," << numRadii-1 << "].\n";
-        return;
+        return -1;
     }
     if (initVel_ind > (numSpeeds-1)) {
         std::cout << "Invalid particle speed, must be between [0," << numSpeeds-1 << "].\n";
-        return;
+        return -1;
     }
 
     //------------------------------------ Load Data ------------------------------------//
 
     // Create vector of particle speeds in km/s between [25,50,...,700]
-    float dvel = 700.0/numSpeeds;
+    float dvel = 0.7/numSpeeds;
     vector<float> partSpeeds(28);
-    for (int vv=0; vv<partSpeeds.Size(); vv++) {
+    for (int vv=0; vv<partSpeeds.size(); vv++) {
         partSpeeds[vv] = (vv+1)*dvel;
     }
 
     // Create vector of particle sizes in um between [0.5,1.0,...,15]
-    float drad = 15 / numRadii;
+    float drad = 15.0 / numRadii;
     vector<float> partSizes(30);
-    for (int vv=0; vv<partSizes.Size(); vv++) {
+    for (int vv=0; vv<partSizes.size(); vv++) {
         partSizes[vv] = (vv+1)*drad;
     }
 
