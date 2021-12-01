@@ -546,6 +546,23 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         std::cout << "WARNING: total inclination weights do not sum to one!\n";
     }
 
+    // Compute total residence time
+    double total_res_time = 0.0;
+    for (int i = 0; i < m_nr; i++) {
+        for (int j = 0; j < m_nphi; j++) {
+            for (int k = 0; k < m_nvr; k++) {
+                for (int l = 0; l < m_nvphi; l++) {
+                #if C_ARRAY
+                    total_res_time += residenceTime[i][j][k][l];
+                #else
+                    total_res_time += residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)];
+                #endif
+                }
+            }
+        }
+    }
+    std::cout << "Total one-particle residence time: " << total_res_time << "\n";
+
     // DEBUG: make sure total volume matches sum over cells in data cone
     double vtotal_vol = 0;
     double rtotal_vol = 0;
@@ -617,9 +634,9 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
                 for (int l = 0; l < m_nvphi; l++) {
                     temp_vol = m_locVolume[i][j] * m_velVolume[k][l];
                 #if C_ARRAY
-                    residenceTime[i][j][k][l] /= temp;
+                    residenceTime[i][j][k][l] /= temp_vol;
                 #else
-                    residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] /= temp;
+                    residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] /= temp_vol;
                 #endif
                 }
             }
