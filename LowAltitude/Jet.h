@@ -55,7 +55,8 @@ public:
           const int & gridMax_y, const int & gridMin_z, const int & gridMax_z,
           const float & gridSize_dx);
     void HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
-    const float &partRad, const int &initVel_ind, const float &initVel, const int &num_inner_inc);
+    const float &partRad, const int &initVel_ind, const float &initVel,
+    const int &num_inner_inc, bool compute_flux=true);
 
 private:
 
@@ -166,12 +167,70 @@ private:
             hsize_t dim4[4] = {m_nr,m_nphi,m_nvr,m_nvphi};  // dataset dimensions
             DataSpace dataspace4d(ndims, dim4);                  // Create data space w/ given dims
             dataset_name = "residence_time";
-            DataSet dataset2d = file.createDataSet(dataset_name, dfloat, dataspace4d);
+            DataSet dataset4d = file.createDataSet(dataset_name, dfloat, dataspace4d);
 #if C_ARRAY
-            dataset2d.write(residenceTime, dfloat);    // Write data to dataset (works w/ array a[][][])
+            dataset4d.write(residenceTime, dfloat);    // Write data to dataset (works w/ array a[][][])
 #else
-            dataset2d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
+            dataset4d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
 #endif
+            // Particle radius attribute
+            dataset_name = "particle_radius"; 
+            hsize_t dim1[1] = {1};   // dataset dimensions
+            DataSpace radius_dspace(1, dim1);  // Create data space w/ given dims
+            Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
+            att_radius.write(dfloat, &partRad);    // Write data to dataset
+
+            // Particle speed attribute
+            dataset_name = "initial_speed"; 
+            DataSpace speed_dspace(1, dim1);  // Create data space w/ given dims
+            Attribute att_speed = file.createAttribute (dataset_name, dfloat, speed_dspace);
+            att_speed.write(dfloat, &initVel);    // Write data to dataset
+
+            // Number azimuth attribute
+            dataset_name = "number_azimuth"; 
+            DataSpace azimuth_dspace(1, dim1);  // Create data space w/ given dims
+            Attribute att_azimuth = file.createAttribute (dataset_name, dint, azimuth_dspace);
+            att_azimuth.write(dint, &numAzimuth);    // Write data to dataset
+        }
+        // catch failures
+        //catch( FileIException error ) { error.printErrorStack(stderr,H5E_DEFAULT); } // H5File operations error
+        //catch( DataSetIException error ) { error.printErrorStack(); } // DataSet operations error
+        //catch( DataSpaceIException error ) { error.printErrorStack(); } // DataSpace operations errpr
+        //catch( DataTypeIException error ) { error.printErrorStack(); } // DataSpace operations error
+        catch( FileIException error ) { } // H5File operations error
+        catch( DataSetIException error ) { } // DataSet operations error
+        catch( DataSpaceIException error ) { } // DataSpace operations errpr
+        catch( DataTypeIException error ) { } // DataSpace operations error
+    }
+
+    void HDF5FluxWrite(std::unique_ptr<float[]> &residenceTime,
+        const int &numAzimuth, const int &partRad_ind, const float &partRad,
+        const int &initVel_ind, const float &initVel)
+    {
+        // Try block to detect exceptions raised by any of the calls inside it
+        try
+        {
+            // Turn off the auto-printing when failure occurs so that we can
+            // handle the errors appropriately
+            Exception::dontPrint();
+
+            // Create file; H5F_ACC_TRUNC means if the file exists, open as
+            // read only, otherwise create new file
+            std::string  file_name = "./data/EncResidenceTime_r" + std::to_string(partRad_ind) +
+                "_s" + std::to_string(initVel_ind) + ".hdf5";
+            H5File file(file_name, H5F_ACC_TRUNC);
+            std::string dataset_name;
+            FloatType dfloat(PredType::NATIVE_FLOAT);  // Native C++ Float32
+            IntType dint(PredType::NATIVE_INT);        // Native C++ Int
+
+            // 4d array storage
+            int ndims = 2;
+            hsize_t dim4[2] = {m_nr,m_nphi};  // dataset dimensions
+            DataSpace dataspace2d(ndims, dim4);                  // Create data space w/ given dims
+            dataset_name = "flux";
+            DataSet dataset2d = file.createDataSet(dataset_name, dfloat, dataspace2d);
+            dataset2d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
+
             // Particle radius attribute
             dataset_name = "particle_radius"; 
             hsize_t dim1[1] = {1};   // dataset dimensions

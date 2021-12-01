@@ -72,6 +72,7 @@ namespace genFunctions
 		 			vector<double> ez, const float & initVel, const float & latitude,
 					const float & longitude, const float &inc = 0, const float &azimuth = 0);
 	int get4dind(int i, int j, int k, int l, int n1, int n2, int n3, int n4);
+	int get2dind(int i, int j, int n1, int n2);
 
 
 	template<typename T>

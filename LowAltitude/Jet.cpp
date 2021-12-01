@@ -415,7 +415,8 @@ void Jet::UpdateDensity(unordered_map<long int,pair<float,float> > & local,
 /* Simulate specific vector of speeds and azimuth angles, for a fixed inclination to the jet */
 /* directional vector. Save binary output. Uses Open MP Parallelization.                     */
 void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
-    const float &partRad, const int &initVel_ind, const float &initVel, const int &num_inner_inc)
+    const float &partRad, const int &initVel_ind, const float &initVel,
+    const int &num_inner_inc, bool compute_flux)
 {   
     // Initialize variables for computing and storing density profile and collision locations. 
     systemSolver.SetSize(partRad);
@@ -623,14 +624,55 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         }
     }
 
-    // Save density profile
-#if C_ARRAY
-    Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
-        partRad, initVel_ind, initVel);
-#else
-    Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
-        partRad, initVel_ind, initVel);
-#endif
+    // Use quadrature routine to map residence time to flux profile, only
+    // export flux to HDF5
+    if (compute_flux) {
+        std::unique_ptr<float[]> flux = std::make_unique<float[]>(m_nr*m_nphi);
+
+        // Loop over 2d spatial grid
+        for (int i = 0; i < m_nr; i++) {
+            for (int j = 0; j < m_nphi; j++) {
+                double qq = 0.0;
+                // Loop over 2d velocity space to perform midpoint quadrature
+                for (int k = 0; k < m_nvr; k++) {
+                    for (int l = 0; l < m_nvphi; l++) {
+                        // velocity magnitude grid info
+                        double vlow = k*m_dvr;
+                        double vup = (k+1)*m_dvr;
+                        double vhat = (vlow + vup) / 2.0;
+                        double deltav = vup - vlow;
+                        // velocity inclination grid info
+                        double philow = l*m_dvphi;
+                        double phiup = (l+1)*m_dvphi;
+                        double phihat = (philow + phiup) / 2.0;
+                        double deltaphi = phiup - philow;
+                        // midpoint quadrature
+                        qq += residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] *
+                            cos(phihat) * sin(phihat) * (vhat*vhat*vhat) * deltav * deltaphi;
+                    }
+                }
+                // Store approximate flux for this spatial point, 1e12
+                // factor maps km^3*km = km^4 =-> m^4
+                flux[get2dind(i,j,m_nr,m_nphi)] = 2.0 * PI * qq * 1e12;
+            }
+        }
+    #if C_ARRAY
+        std::cout << "Writing flux to HDF5 not implemented for C-style arrays.\n";
+    #else
+        Jet::HDF5FluxWrite(flux, numAzimuth, partRad_ind,
+            partRad, initVel_ind, initVel);
+    #endif
+    }
+    // Export full 4d residence time profile to HDF5
+    else {
+    #if C_ARRAY
+        Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
+            partRad, initVel_ind, initVel);
+    #else
+        Jet::HDF5DistWrite(residenceTime, numAzimuth, partRad_ind,
+            partRad, initVel_ind, initVel);
+    #endif
+    }
 }
 
 
