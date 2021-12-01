@@ -161,11 +161,14 @@ public:
                 //    std::cout << "Exited grid, z = " << partPos_z << ", max altitude = " << CONST_max_altitude << "\n";
                 //    std::cout << "vphi = " << phi_v*RAD2DEG << ", rphi = " << phi_r*RAD2DEG << ", "
                 //        << "vel = " << r_v << "\n";
-                //break;
+                break;
             }
             // Only track density for particles above minimum alttiude of grid
             else if (r_p < CONST_min_altitude) {
                 continue;
+            }
+            else if (phi_v > CONST_max_vphi) {
+                break;
             }
 
             // Add weighted residence time to space-velocity residence time profile
@@ -177,11 +180,11 @@ public:
             else if (ind[3] > nr) std::cout << "|r| ind = " << ind[3] << ", max = " << nr <<
                 ", max alt = " << CONST_max_altitude << ", alt = " << r_p << "\n";
             else {
-#if C_ARRAY
+            #if C_ARRAY
                 flux[ind[0]][ind[1]][ind[2]][ind[3]] += weight;
-#else
+            #else
                 flux[get4dind(ind[0],ind[1],ind[2],ind[3],nvphi,nphi,nvr,nr)] += weight;
-#endif
+            #endif
             }
         }
         // Set CONST_numVariables and associated variables to inital status if equilibrium
