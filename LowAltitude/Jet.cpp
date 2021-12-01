@@ -553,14 +553,10 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             for (int k = 0; k < m_nvr; k++) {
                 for (int l = 0; l < m_nvphi; l++) {
                 #if C_ARRAY
-                    float temp_time = residenceTime[i][j][k][l];
+                    total_res_time += residenceTime[i][j][k][l];
                 #else
-                    float temp_time = residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)];
+                    total_res_time += residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)];
                 #endif
-                    total_res_time += temp_time;
-                    if (temp_time < 0) {
-                        std::cout << "WARNING : residence time " << temp_time << " < 0!\n";
-                    }
                 }
             }
         }
@@ -587,9 +583,6 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             phi1 = phi0 - dvphi_rad;
             m_velVolume[i][j] = (2*PI/3.0) * temp * (std::cos(phi1) - std::cos(phi0));
             vtotal_vol += m_velVolume[i][j];    // DEBUG: sum volume
-            if (m_velVolume[i][j] < 0) {
-                std::cout << "WARNING : velocity volume " << m_velVolume[i][j] << " < 0!\n";
-            }
             m_velVolume[i][j] *= 1e9;   // Convert to m^3 here for numerical stabillity
             phi0 = phi1;
         }
@@ -610,9 +603,6 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             phi1 = phi0 - dphi_rad;
             m_locVolume[i][j] = (2*PI/3.0) * temp * (std::cos(phi1) - std::cos(phi0));
             rtotal_vol += m_locVolume[i][j];    // DEBUG: sum volume 
-            if (m_locVolume[i][j] < 0) {
-                std::cout << "WARNING : position volume " << m_locVolume[i][j] << " < 0!\n";
-            }
             m_locVolume[i][j] *= 1e9;   // Convert to m^3 here for numerical stabillity
             phi0 = phi1;
         }
@@ -647,6 +637,10 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
                     residenceTime[i][j][k][l] /= temp_vol;
                 #else
                     residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] /= temp_vol;
+                    if (residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] < 0) {
+                        std::cout << "WARNING : residence time " <<
+                            residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] << " < 0!\n";
+                    }
                 #endif
                 }
             }
@@ -671,8 +665,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
                         double vhat = (vlow + vup) / 2.0;
                         double deltav = vup - vlow;
                         // velocity inclination grid info
-                        double philow = l*m_dvphi;
-                        double phiup = (l+1)*m_dvphi;
+                        double philow = l*dvphi_rad;
+                        double phiup = (l+1)*dvphi_rad;
                         double phihat = (philow + phiup) / 2.0;
                         double deltaphi = phiup - philow;
                         // midpoint quadrature
