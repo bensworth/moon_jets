@@ -61,7 +61,9 @@ int main(int argc, char *argv[])
           numAzimuth = 100,
           partRad_ind = 0,
           initVel_ind = 0,
-          num_inner_inc = 3;
+          num_inner_inc = 4,    // Number of particles simulated/inclination bin
+          numSpeeds = 28,
+          numRadii = 30;
     int   orthogonal = 1,
           bFieldModel  = 1, // Connerey charging model
           jet_ind = -1;
@@ -93,31 +95,31 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Check for valid radii and speed indices
+    if (partRad_ind > (numRadii-1)) {
+        std::cout << "Invalid particle radius, must be between [0," << numRadii-1 << "].\n";
+        return;
+    }
+    if (initVel_ind > (numSpeeds-1)) {
+        std::cout << "Invalid particle speed, must be between [0," << numSpeeds-1 << "].\n";
+        return;
+    }
+
     //------------------------------------ Load Data ------------------------------------//
 
-    // Load .csv of particle speeds
-    vector<float> partSpeeds;
-    ifstream getSpeed("../Data/Speed_ms.csv");
-    assert(getSpeed.is_open());
-
-    while(!getSpeed.eof()) {
-        float temp;
-        getSpeed >> temp;                        // Load speed bins in m/s
-        partSpeeds.push_back( temp / 1000.);     // Convert to km/s
+    // Create vector of particle speeds in km/s between [25,50,...,700]
+    float dvel = 700.0/numSpeeds;
+    vector<float> partSpeeds(28);
+    for (int vv=0; vv<partSpeeds.Size(); vv++) {
+        partSpeeds[vv] = (vv+1)*dvel;
     }
-    getSpeed.close();
 
-    // Load .csv of particle sizes
-    vector<float> partSizes;
-    ifstream getSize("../Data/Size_m_reduced.csv");
-    assert(getSize.is_open());
-
-    while(!getSize.eof()) {
-        float temp;
-        getSize >> temp;                     // Load size bins in m.
-        partSizes.push_back(temp*1000000.);  // Convert to um
+    // Create vector of particle sizes in um between [0.5,1.0,...,15]
+    float drad = 15 / numRadii;
+    vector<float> partSizes(30);
+    for (int vv=0; vv<partSizes.Size(); vv++) {
+        partSizes[vv] = (vv+1)*drad;
     }
-    getSize.close();
 
     //-------------------------------- Initialize system --------------------------------//
     

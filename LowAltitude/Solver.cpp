@@ -186,6 +186,7 @@ void Solver::SetCharge(const float & c)
 
 /* Function to set initial particle radius and mass, given radius and density. */
 /* Calls SetCharge2Mass function to set the appropriate charge to mass ratio.  */
+/* Takes radius in um. */
 void Solver::SetSize(const float & r, const float & rho)
 {
     // If we have a large enough particle, it will charge fast enough that we 
