@@ -155,8 +155,8 @@ private:
                 alts[i] = m_min_altitude + (i+0.5)*m_dr;
             }
             float angs[m_nphi];
-            for (int i=0; i<m_nr; i++) {
-                angs[i] = (i+0.5)*m_dr;
+            for (int i=0; i<m_nphi; i++) {
+                angs[i] = (i+0.5)*m_dphi;
             }
 
             // Turn off the auto-printing when failure occurs so that we can
@@ -242,7 +242,7 @@ private:
         }
         float angs[m_nphi];
         for (int i=0; i<m_nphi; i++) {
-            angs[i] = (i+0.5)*m_dr;
+            angs[i] = (i+0.5)*m_dphi;
         }
 
         // Try block to detect exceptions raised by any of the calls inside it
