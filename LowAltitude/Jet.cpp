@@ -399,7 +399,7 @@ void Jet::UpdateDensity(unordered_map<long int,pair<float,float> > & local,
 /* directional vector. Save binary output. Uses Open MP Parallelization.                     */
 void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
     const float &partRad, const int &initVel_ind, const float &initVel,
-    const int &num_inner_inc, bool compute_flux)
+    const int &num_inner_inc, bool compute_flux, bool angular_dist)
 {   
     // Initialize variables for computing and storing density profile and collision locations. 
     systemSolver.SetSize(partRad);
@@ -445,7 +445,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         // to ensure particle is counted in most cells it traverses
         double dt = 0.25 * m_dr / initVel;
 
-        // Loop over innr step sizes of inclination angle within larger grid bin
+        // Loop over inner step sizes of inclination angle within larger grid bin
         // This is to increase fidelity of data for a given bin (outer loop)
         for (int jj=0; jj<num_inner_inc; jj++) {
 
@@ -455,14 +455,20 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
             double tphi1 = j*m_dphi + (jj+1.0)*m_dphi/num_inner_inc;
             double inclination = (tphi1 + tphi0) / 2.0;
 
-            // double inc_weight = 
-            tphi1 *= DEG2RAD;   // Convert to radians for normalization
-            tphi0 *= DEG2RAD;   // Convert to radians for normalization
-            double inc_weight = ( (tphi1-tphi0)*PI + phimax_rad*sin(PI*tphi1/phimax_rad) -
-                phimax_rad*sin(PI*tphi0/phimax_rad) ) / (PI * phimax_rad);
-            double tempWeight = inc_weight * dt / (numAzimuth);
+            // inclination weight over subinterval
+            double inc_weight;
+            if (angular_dist) {
+                tphi1 *= DEG2RAD;   // Convert to radians for normalization
+                tphi0 *= DEG2RAD;   // Convert to radians for normalization
+                inc_weight = ( (tphi1-tphi0)*PI + phimax_rad*sin(PI*tphi1/phimax_rad) -
+                    phimax_rad*sin(PI*tphi0/phimax_rad) ) / (PI * phimax_rad);
+            }
+            else {
+                inc_weight = 1.0 / (m_nphi * num_inner_inc);
+            }
+            double temp_weight = inc_weight * dt / (numAzimuth);
 
-            // DEBUG : confirm inclination weights sum to one
+            // confirm inclination weights sum to one
             total_inc_weight += inc_weight;
 
             // Loop over azimuthal angles
@@ -493,9 +499,9 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
                 // Simulate particle, add density profile to aggregate jet density, and   
                 // collision coordinate to aggregate collision density. 
             #if C_ARRAY
-                tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime);
+                tempSolver.HoverSim(dt,y,temp_weight,threadResidenceTime);
             #else
-                tempSolver.HoverSim(dt,y,tempWeight,threadResidenceTime,m_nvphi,m_nphi,m_nvr,m_nr);
+                tempSolver.HoverSim(dt,y,temp_weight,threadResidenceTime,m_nvphi,m_nphi,m_nvr,m_nr);
             #endif
             }
         }
@@ -609,7 +615,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         std::cout << "\tTotal velocity volume = " << vvol << "\n";
     }
     
-    // Normalize residenceTime based on 6d-cell volume
+    // Normalize residenceTime to 1 / (m^3 (m/s)^3) based on 6d-cell volume
     double temp_vol;
     for (int i = 0; i < m_nr; i++) {
         for (int j = 0; j < m_nphi; j++) {
@@ -654,13 +660,14 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
                         double phiup = (l+1)*dvphi_rad;
                         double phihat = (philow + phiup) / 2.0;
                         double deltaphi = phiup - philow;
+
                         // midpoint quadrature
                         qq += residenceTime[get4dind(i,j,k,l,m_nr,m_nphi,m_nvr,m_nvphi)] *
                             cos(phihat) * sin(phihat) * (vhat*vhat*vhat) * deltav * deltaphi;
                     }
                 }
                 // Store approximate flux for this spatial point, 1e12
-                // factor maps km^3*km = km^4 =-> m^4
+                // factor maps r^3dr ~ km^3*km = km^4 =-> m^4
                 flux[get2dind(i,j,m_nr,m_nphi)] = 2.0 * PI * qq * 1e12;
             }
         }
@@ -668,7 +675,8 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
         std::cout << "Writing flux to HDF5 not implemented for C-style arrays.\n";
     #else
         Jet::HDF5FluxWrite(flux, numAzimuth, partRad_ind,
-            partRad, initVel_ind, initVel, total_particles, total_res_time);
+            partRad, initVel_ind, initVel, total_particles,
+            total_res_time, angular_dist);
     #endif
     }
     // Export full 4d residence time profile to HDF5

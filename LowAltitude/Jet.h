@@ -56,7 +56,7 @@ public:
           const float & gridSize_dx);
     void HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
     const float &partRad, const int &initVel_ind, const float &initVel,
-    const int &num_inner_inc, bool compute_flux=true);
+    const int &num_inner_inc, bool compute_flux=true, bool angular_dist=true);
 
 private:
 
@@ -233,7 +233,7 @@ private:
     void HDF5FluxWrite(std::unique_ptr<float[]> &residenceTime,
         const int &numAzimuth, const int &partRad_ind, const float &partRad,
         const int &initVel_ind, const float &initVel, const int &total_particles,
-        const float &one_time)
+        const float &one_time, bool angular_dist)
     {
         // Altitude and angle at cell center of grid
         float alts[m_nr];
@@ -254,8 +254,15 @@ private:
 
             // Create file; H5F_ACC_TRUNC means if the file exists, open as
             // read only, otherwise create new file
-            std::string  file_name = "./data/EncFlux_r" + std::to_string(partRad_ind) +
-                "_s" + std::to_string(initVel_ind) + ".hdf5";
+            std::string  file_name;
+            if (angular_dist) {
+                file_name = "./data/EncFlux_r" + std::to_string(partRad_ind) +
+                    "_s" + std::to_string(initVel_ind) + ".hdf5";
+            }
+            else {
+                file_name = "./data/EncFlux_uni_r" + std::to_string(partRad_ind) +
+                    "_s" + std::to_string(initVel_ind) + ".hdf5";
+            }
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;
             FloatType dfloat(PredType::NATIVE_FLOAT);  // Native C++ Float32
@@ -297,6 +304,14 @@ private:
             DataSpace speed_dspace(1, dim1);
             Attribute att_speed = file.createAttribute (dataset_name, dfloat, speed_dspace);
             att_speed.write(dfloat, &initVel);
+
+            // Angular distribution attribute
+            if (angular_dist) dataset_name = "cos^2 angular distribution"; 
+            else dataset_name = "uniform angular distribution"; 
+            int ang = 1;
+            DataSpace ang_dspace(1, dim1);
+            Attribute att_ang = file.createAttribute (dataset_name, dint, ang_dspace);
+            att_ang.write(dint, &ang);
 
             // Number azimuth attribute
             dataset_name = "number azimuth angles"; 

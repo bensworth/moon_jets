@@ -67,7 +67,8 @@ int main(int argc, char *argv[])
     int   orthogonal = 1,
           bFieldModel  = 1, // Connerey charging model
           jet_ind = -1;
-    bool compute_flux = true;
+    bool compute_flux = true,
+         angular_dist = true;
 
     for(int i=1; i<argc; i++) {
 
@@ -101,6 +102,10 @@ int main(int argc, char *argv[])
         else if(strcmp(argv[i],"-time") == 0)
         {
             compute_flux = false;
+        }
+        else if(strcmp(argv[i],"-uni") == 0)
+        {
+            angular_dist = false;
         }
     }
 
@@ -183,7 +188,7 @@ int main(int argc, char *argv[])
     //-------------------------------- Simulate jet --------------------------------//
     Eruptor.HoverSimOMP(systemSolver, numAzimuth, partRad_ind,
         partSizes[partRad_ind], initVel_ind, partSpeeds[initVel_ind],
-        num_inner_inc, compute_flux);
+        num_inner_inc, compute_flux, angular_dist);
 
     return 0;
 }
