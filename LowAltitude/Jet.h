@@ -231,6 +231,7 @@ private:
     }
 
     void HDF5FluxWrite(std::unique_ptr<float[]> &residenceTime,
+        std::unique_ptr<float[]> &alt_dist,
         const int &numAzimuth, const int &partRad_ind, const float &partRad,
         const int &initVel_ind, const float &initVel, const int &total_particles,
         const float &one_time, bool angular_dist)
@@ -276,9 +277,16 @@ private:
             DataSet dataset2d = file.createDataSet(dataset_name, dfloat, dataspace2d);
             dataset2d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
 
-            // Save cell-centered altitude array
+            // Save altitude distribution array
             ndims = 1;
             hsize_t dim_alt[1] = {m_nr};
+            DataSpace dataspace_dists(ndims, dim_alt);     // Create data space w/ given dims
+            dataset_name = "altitude distribution";
+            DataSet dataset_dists = file.createDataSet(dataset_name, dfloat, dataspace_dists);
+            dataset_dists.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
+
+            // Save cell-centered altitude array
+            ndims = 1;
             DataSpace dataspace_alts(ndims, dim_alt);
             dataset_name = "altitudes";
             DataSet dataset_alts = file.createDataSet(dataset_name, dfloat, dataspace_alts);
