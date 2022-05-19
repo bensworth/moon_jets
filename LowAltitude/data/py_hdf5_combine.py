@@ -14,8 +14,8 @@ import numpy as np
 # NOTE: HDF5 groups work like dictionaries, and datasets work like NumPy arrays
 
 # Parameters specifying which data to parse
-angular_dist = "uniform"
-max_angle_load = 15
+angular_dist = "cos2"
+max_angle_load = 25
 
 # Loop over all hdf5 files in the data directory. In this loop,
 # we are simply collecting unique particle radii and speeds to
@@ -164,7 +164,7 @@ if angular_dist == "uniform":
 else:
     ha.attrs["angular dist"] = "cos^2"
 
-alt_dists = np.zeros((altitudes.shape[0], speed_arr.shape[0], radii_arr.shape[0]))
+alt_dists = np.zeros((altitudes.shape[0], radii_arr.shape[0], speed_arr.shape[0]))
 
 # Loop over all hdf5 files in the data directory and copy flux 
 # profiles to a single HDF5 file 
@@ -185,7 +185,7 @@ for filename in os.listdir(prefix):
         f.copy(f["flux"], hh["flux profiles"], "flux_r" + str(tempr) + "_s" + str(temps))
 
         # Set a;titude distribution for given speed and size 
-        alt_dists[:,tempr,temps] = f["altitude distribution"]
+        alt_dists[:,tempr,temps] = np.array(f["altitude distribution"])
 
         f.close()
     else:
@@ -198,7 +198,10 @@ for filename in os.listdir(prefix):
 # attribute. 
 ha.create_group("altitude distributions")
 for i in range(0,altitudes.shape[0]):
-    f.copy(alt_dists[i,:,:], ha["altitude distributions"], "a" + str(i))
+    # f.copy(alt_dists[i,:,:], ha["altitude distributions"], "a" + str(i))
+    ha["altitude distributions"]["a" + str(i)] = alt_dists[i,:,:]
 
 hh.close()
 ha.close()
+
+
