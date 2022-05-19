@@ -619,7 +619,7 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     // - NOTE : intentionally doing this before residence times
     // are normalized by velocity volume
     std::unique_ptr<float[]> alt_dist = std::make_unique<float[]>(m_nr);
-    double r0=m_min_altitude, r1;
+    r0=m_min_altitude;
     for (int i = 0; i < m_nr; i++) { // Loop over altitudes
         alt_dist[i] = 0.0;
         // Sum residence time over 2d velocity space and inclination angles
@@ -634,9 +634,9 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
 
         // Store approximate flux for this spatial point in m^3
         r1 = r0 + m_dr;
-        r0 = r1;
         double sc_norm = 1e9 * 2.0 * PI * (1.0 - cos(phimax_rad))*(r1*r1*r1 - r0*r0*r0) / 3.0;
         alt_dist[i] /= sc_norm;
+        r0 = r1;
     }
 
     // Normalize residenceTime to 1 / (m^3 (m/s)^3) based on 6d-cell volume

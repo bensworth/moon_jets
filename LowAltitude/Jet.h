@@ -258,11 +258,11 @@ private:
             std::string  file_name;
             if (angular_dist) {
                 file_name = "./data/EncFlux_r" + std::to_string(partRad_ind) +
-                    "_s" + std::to_string(initVel_ind) + "_ang" + str(int(m_maxAngle)) + ".hdf5";
+                    "_s" + std::to_string(initVel_ind) + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
             }
             else {
                 file_name = "./data/EncFlux_uni_r" + std::to_string(partRad_ind) +
-                    "_s" + std::to_string(initVel_ind) + "_ang" + str(int(m_maxAngle)) + ".hdf5";
+                    "_s" + std::to_string(initVel_ind) + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
             }
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;
