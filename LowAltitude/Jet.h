@@ -231,6 +231,7 @@ private:
     }
 
     void HDF5FluxWrite(std::unique_ptr<float[]> &residenceTime,
+        std::unique_ptr<float[]> &alt_dist,
         const int &numAzimuth, const int &partRad_ind, const float &partRad,
         const int &initVel_ind, const float &initVel, const int &total_particles,
         const float &one_time, bool angular_dist)
@@ -257,11 +258,11 @@ private:
             std::string  file_name;
             if (angular_dist) {
                 file_name = "./data/EncFlux_r" + std::to_string(partRad_ind) +
-                    "_s" + std::to_string(initVel_ind) + ".hdf5";
+                    "_s" + std::to_string(initVel_ind) + "_ang" + str(int(m_maxAngle)) + ".hdf5";
             }
             else {
                 file_name = "./data/EncFlux_uni_r" + std::to_string(partRad_ind) +
-                    "_s" + std::to_string(initVel_ind) + ".hdf5";
+                    "_s" + std::to_string(initVel_ind) + "_ang" + str(int(m_maxAngle)) + ".hdf5";
             }
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;
@@ -276,9 +277,16 @@ private:
             DataSet dataset2d = file.createDataSet(dataset_name, dfloat, dataspace2d);
             dataset2d.write(residenceTime.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
 
-            // Save cell-centered altitude array
+            // Save altitude distribution array
             ndims = 1;
             hsize_t dim_alt[1] = {m_nr};
+            DataSpace dataspace_dists(ndims, dim_alt);     // Create data space w/ given dims
+            dataset_name = "altitude distribution";
+            DataSet dataset_dists = file.createDataSet(dataset_name, dfloat, dataspace_dists);
+            dataset_dists.write(alt_dist.get(), dfloat);    // Write data to dataset (works w/ array a[][][])
+
+            // Save cell-centered altitude array
+            ndims = 1;
             DataSpace dataspace_alts(ndims, dim_alt);
             dataset_name = "altitudes";
             DataSet dataset_alts = file.createDataSet(dataset_name, dfloat, dataspace_alts);
@@ -298,6 +306,12 @@ private:
             DataSpace radius_dspace(1, dim1);
             Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
             att_radius.write(dfloat, &partRad);
+
+            // Particle radius attribute
+            dataset_name = "maximum angle"; 
+            DataSpace maxang_dspace(1, dim1);
+            Attribute att_maxang = file.createAttribute (dataset_name, dfloat, maxang_dspace);
+            att_maxang.write(dfloat, &m_max_rphi);
 
             // Particle speed attribute
             dataset_name = "initial speed"; 
