@@ -9,6 +9,6 @@ for S in {0..27}
 do
     for R in {0..29}
     do
-        ./LowAlttiudeSim -s ${S} -r ${R} -uni >> output.txt
+        ./LowAlttiudeSim -s ${S} -r ${R} >> output_cos2.txt
     done
 done
