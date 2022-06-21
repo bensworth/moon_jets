@@ -33,6 +33,7 @@ using namespace H5;
 using namespace std;
 using namespace genFunctions;
 
+
 class Jet
 {
 public:
@@ -110,6 +111,8 @@ private:
                     m_parPos,           // Dust position at ejection
                     m_parNonEjVel;      //
 
+    std::string    m_save_prefix;
+
     /*-------------------------------------------------------------------------------------*/
     /*-------------------------------------- Methods --------------------------------------*/
     /*-------------------------------------------------------------------------------------*/
@@ -165,7 +168,7 @@ private:
 
             // Create file; H5F_ACC_TRUNC means if the file exists, open as
             // read only, otherwise create new file
-            std::string  file_name = "./data/EncResidenceTime_r" + std::to_string(partRad_ind) +
+            std::string  file_name = m_save_prefix + "EncResidenceTime_r" + std::to_string(partRad_ind) +
                 "_s" + std::to_string(initVel_ind) + ".hdf5";
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;
@@ -257,11 +260,11 @@ private:
             // read only, otherwise create new file
             std::string  file_name;
             if (angular_dist) {
-                file_name = "./data/EncFlux_r" + std::to_string(partRad_ind) +
+                file_name = m_save_prefix + "EncFlux_r" + std::to_string(partRad_ind) +
                     "_s" + std::to_string(initVel_ind) + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
             }
             else {
-                file_name = "./data/EncFlux_uni_r" + std::to_string(partRad_ind) +
+                file_name = m_save_prefix + "EncFlux_uni_r" + std::to_string(partRad_ind) +
                     "_s" + std::to_string(initVel_ind) + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
             }
             H5File file(file_name, H5F_ACC_TRUNC);

@@ -45,23 +45,43 @@ using namespace std;
 using namespace genFunctions;
 
 
-// Const array size variables; must be defined in cpp file, not header file
-const int Jet::m_nr = 196;
-const int Jet::m_nphi = 45;
-const int Jet::m_nvr = 35;
-const int Jet::m_nvphi = 20;
-const float Jet::m_min_altitude = 0.1;
-const float Jet::m_max_altitude = 5;
-const float Jet::m_max_velocity = 0.7;
-const float Jet::m_max_rphi = 15;
-const float Jet::m_max_vphi = 90;
+// Const array size variables; must be defined in cpp file, not header file.
+// GRIDTYPE = Hardcoded variable defining grid
+// - GRIDTYPE = 0 --> low altitude grid, [100m, 5km].
+// - GRIDTYPE = 1 --> grid over [5km, 100km].
+#define GRIDTYPE 0
+#if GRIDTYPE==0     // low altitude
+    const int Jet::m_nr = 196;
+    const int Jet::m_nphi = 45;
+    const int Jet::m_nvr = 35;
+    const int Jet::m_nvphi = 20;
+    const float Jet::m_min_altitude = 0.1;
+    const float Jet::m_max_altitude = 5;
+    const float Jet::m_max_velocity = 0.7;
+    const float Jet::m_max_rphi = 15;
+    const float Jet::m_max_vphi = 90;
+#else      // higher altitude
+    const int Jet::m_nr = 196;
+    const int Jet::m_nphi = 45;
+    const int Jet::m_nvr = 35;
+    const int Jet::m_nvphi = 20;
+    const float Jet::m_min_altitude = 5;
+    const float Jet::m_max_altitude = 100;
+    const float Jet::m_max_velocity = 1;
+    const float Jet::m_max_rphi = 15;
+    const float Jet::m_max_vphi = 90;
+#endif
 
 /* Constructor */
 Jet::Jet() : m_dataID(0), m_dr((m_max_altitude - m_min_altitude) / m_nr),
     m_dvr(m_max_velocity / m_nvr), m_dphi(m_max_rphi / m_nphi),
     m_dvphi(m_max_vphi / m_nvphi), m_maxAngleRad(DEG2RAD*m_max_rphi)
 {
-
+#if GRIDTYPE==0     // low altitude
+    m_save_prefix = "./data/gridtype0/";
+#else
+    m_save_prefix = "./data/gridtype1/";
+#endif
 }
 
 /* Deconstructor */
