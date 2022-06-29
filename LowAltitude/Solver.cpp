@@ -264,6 +264,35 @@ void Solver::CreateDistributionGrid(const float &min_alt,
     m_vdphi = CONST_max_vphi / CONST_vphi;
 }
 
+/* Set spherical grid parameters for altitude density simulation.
+   Defines grid in altitude with num_alt bins over [min_alt,max_alt],
+   and particle trajectories are stopped outside of angle max_rphi.
+   max_rphi is input in degrees and altiude should be passed in km. 
+   Hard codes max_vphi to be 90 degrees so we know when particle is
+   returning to Enceladus. */
+void Solver::CreateAltitudeGrid(const float &min_alt,
+    const float &max_alt, const int &num_alt,
+    const float &max_rphi)
+{
+    // Grid for magnitude in location and velocity
+    CONST_max_altitude = max_alt;
+    CONST_min_altitude = min_alt;
+    CONST_num_altitude = num_alt;
+    m_d_altitude = (CONST_max_altitude - CONST_min_altitude) / 
+        CONST_num_altitude;
+
+    // Grids for opening angles
+    CONST_max_rphi = max_rphi * DEG2RAD;
+    CONST_rphi = num_rphi;
+    m_rdphi = CONST_max_rphi / CONST_rphi;
+
+    CONST_max_vphi = 90 * DEG2RAD;
+}
+
+int Solver::GetAltitudeIndex(double alt)
+{
+    return floor( (std::abs(alt)-CONST_min_altitude) / m_d_altitude );  // altitude index
+}
 
 bool Solver::Abs_compare(const double & a, const double & b)
 {

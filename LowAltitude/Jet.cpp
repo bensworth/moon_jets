@@ -48,7 +48,7 @@ using namespace genFunctions;
 // Const array size variables; must be defined in cpp file, not header file.
 // GRIDTYPE = Hardcoded variable defining grid
 // - GRIDTYPE = 0 --> low altitude grid, [100m, 5km].
-// - GRIDTYPE = 1 --> grid over [5km, 100km].
+// - GRIDTYPE = 1 --> grid over [5km, 200km]; use for altitude sim
 #define GRIDTYPE 0
 #if GRIDTYPE==0     // low altitude
     const int Jet::m_nr = 196;
@@ -58,17 +58,17 @@ using namespace genFunctions;
     const float Jet::m_min_altitude = 0.1;
     const float Jet::m_max_altitude = 5;
     const float Jet::m_max_velocity = 0.7;
-    const float Jet::m_max_rphi = 15;
+    const float Jet::m_max_rphi = 25;
     const float Jet::m_max_vphi = 90;
 #else      // higher altitude
-    const int Jet::m_nr = 196;
+    const int Jet::m_nr = 195;
     const int Jet::m_nphi = 45;
     const int Jet::m_nvr = 35;
     const int Jet::m_nvphi = 20;
     const float Jet::m_min_altitude = 5;
-    const float Jet::m_max_altitude = 100;
+    const float Jet::m_max_altitude = 200;
     const float Jet::m_max_velocity = 1;
-    const float Jet::m_max_rphi = 15;
+    const float Jet::m_max_rphi = 25;
     const float Jet::m_max_vphi = 90;
 #endif
 
@@ -415,8 +415,9 @@ void Jet::UpdateDensity(unordered_map<long int,pair<float,float> > & local,
     }
 }
 
-/* Simulate specific vector of speeds and azimuth angles, for a fixed inclination to the jet */
-/* directional vector. Save binary output. Uses Open MP Parallelization.                     */
+/* Simulate all azimuthal and inclination angles for given particle size
+and speed. Collect 6d density profile in space and velocity, compute
+flux for hovering spacecraft. Save HDF5 output. Uses Open MP. */
 void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
     const float &partRad, const int &initVel_ind, const float &initVel,
     const int &num_inner_inc, bool compute_flux, bool angular_dist)
@@ -735,6 +736,155 @@ void Jet::HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &p
     }
 }
 
+/* Simulate all azimuthal and inclination angles for given particle size
+ * and speed. Store particle number density in discrete altitude bin.
+ * Save HDF5 output. */
+void Jet::AltitudeSim(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
+    const float &partRad, const int &initVel_ind, const float &initVel,
+    const int &num_inner_inc, bool angular_dist)
+{   
+    // Initialize variables for computing and storing density profile and collision locations. 
+    systemSolver.SetSize(partRad);
+    float dtheta = 360. / numAzimuth;
+    double phimax_rad = m_max_rphi*DEG2RAD;
+
+    // Construct grid in Solver object
+    systemSolver.CreateAltitudeGrid(m_min_altitude, m_max_altitude, m_nr);
+
+    // Allocate master data array
+    std::unique_ptr<float[]> residenceTime = std::make_unique<float[]>(m_nr);
+
+    // Declare OMP parallelism outside of loop so can construct objects
+    // once and reuse,
+    double total_inc_weight = 0.0;
+    #pragma omp parallel
+    {
+    Solver tempSolver = systemSolver;
+    // Declare inner OMP variables
+    double *y = new double[CONST_numVariables];
+    std::unique_ptr<float[]> threadResidenceTime = std::make_unique<float[]>(m_nr);
+
+    #pragma omp for schedule(static) reduction( + : total_inc_weight )
+    // OpenMP Parallel Loop over inclination angles
+    // - here we use inclination for the OpenMP because since we are
+    // storing data in effectively a 2d space-velocity grid, all azimuthal
+    // angles for a fixed inclination should traverse similar data bins.
+    for (int j=0; j<m_nphi; j++) {
+
+        // Define time step as function of initial velocity and gridsize
+        // to ensure particle is counted in most cells it traverses
+        double dt = 0.25 * m_dr / initVel;
+
+        // Loop over inner step sizes of inclination angle within larger grid bin
+        // This is to increase fidelity of data for a given bin (outer loop)
+        for (int jj=0; jj<num_inner_inc; jj++) {
+
+            // Inclination of ejection direction from orthogonal; take as
+            // center of interval, e.g., 0.5 for m_dphi = 1 and j=0.
+            double tphi0 = j*m_dphi + jj*m_dphi/num_inner_inc;
+            double tphi1 = j*m_dphi + (jj+1.0)*m_dphi/num_inner_inc;
+            double inclination = (tphi1 + tphi0) / 2.0;
+
+            // inclination weight over subinterval
+            double inc_weight;
+            if (angular_dist) {
+                tphi1 *= DEG2RAD;   // Convert to radians for normalization
+                tphi0 *= DEG2RAD;   // Convert to radians for normalization
+                inc_weight = ( (tphi1-tphi0)*PI + phimax_rad*sin(PI*tphi1/phimax_rad) -
+                    phimax_rad*sin(PI*tphi0/phimax_rad) ) / (PI * phimax_rad);
+            }
+            else {
+                inc_weight = 1.0 / (m_nphi * num_inner_inc);
+            }
+            double temp_weight = inc_weight * dt / (numAzimuth);
+
+            // confirm inclination weights sum to one
+            total_inc_weight += inc_weight;
+
+            // Loop over azimuthal angles
+            for (int i=0; i<numAzimuth; i++) {
+
+                // Update azimuth and inclination angle and get velocity direction vector.
+                float azimuth  = i * dtheta;
+                vector<double> ejecDir(3); 
+                vector<float>  colLoc(7);
+                ejecDir = Jet::GetEjecVelocity(azimuth,inclination);
+
+                // Update initial conditions. 
+                y[0]  = m_parPos[0];
+                y[1]  = m_parPos[1];
+                y[2]  = m_parPos[2];
+                y[3]  = m_parNonEjVel[0] + initVel*ejecDir[0];
+                y[4]  = m_parNonEjVel[1] + initVel*ejecDir[1];
+                y[5]  = m_parNonEjVel[2] + initVel*ejecDir[2];
+                y[6]  = m_moonPos[0];
+                y[7]  = m_moonPos[1];
+                y[8]  = m_moonPos[2];
+                y[9]  = m_moonVel[0];
+                y[10] = m_moonVel[1];
+                y[11] = m_moonVel[2];
+                if(CONST_numVariables == 13) {
+                    y[12] = 0.;
+                }
+                // Simulate particle, add density profile to aggregate jet density, and   
+                // collision coordinate to aggregate collision density. 
+                tempSolver.AltitudeSim(dt,y,temp_weight,threadResidenceTime);
+            }
+        }
+    }
+    delete [] y;
+
+    // Update master residenceTime with data from inner loops
+    #pragma omp critical
+    {
+        for (int i = 0; i < m_nr; i++) {
+            residenceTime[i] += threadResidenceTime[i];
+        }
+    }
+
+    } // end of OMP
+
+    std::cout << "Total particles simulated: " << numAzimuth * m_nphi * num_inner_inc << "\n";
+    if (std::abs(total_inc_weight-1) > 1e-5) {
+        std::cout << "WARNING: total inclination weights do not sum to one!\n";
+    }
+
+    // Compute total residence time
+    double total_res_time = 0.0;
+    for (int i = 0; i < m_nr; i++) {
+        total_res_time += residenceTime[i];
+    }
+    std::cout << "Total one-particle residence time: " << total_res_time << "\n";
+
+    // DEBUG: make sure total volume matches sum over cells in data cone
+    double rtotal_vol = 0;
+    // DEBUG
+
+    // Normalize residenceTime to 1 / m^3, where volume of slice
+    // in data cone at given altitude given by
+    //      1e9 (m^3/km^3) * (2pi/3) * (cos(0)-\cos(phi_{max})) * (|r_{i+1}|^3 - |r_i|^3)
+    double r0=m_min_altitude, r1;
+    for (int i=0; i<m_nr; i++) {
+        r1 = r0 + m_dr;
+        double alt_volume = 2.0 * PI * (1.0 - cos(phimax_rad))*(r1*r1*r1 - r0*r0*r0) / 3.0;
+        rtotal_vol += alt_volume;
+        residenceTime[i] /= (1e9 * alt_volume);
+        r0 = r1;
+    }
+
+    // Check that volumes sum to volume of entire cone for vel/location
+    double temp = m_max_altitude*m_max_altitude*m_max_altitude - m_min_altitude*m_min_altitude*m_min_altitude;
+    double rvol = (2*PI/3.0) * temp * (std::cos((180-m_max_rphi)*DEG2RAD) - std::cos(PI));
+    if (std::abs(rvol - rtotal_vol) > 1e-5) {
+        std::cout << "\tWARNING, spatial volumes do not match!! Exact = " << rvol << ", sum = " << rtotal_vol << "\n";
+    }
+    else {
+        std::cout << "\tTotal spatial volume = " << rvol << "\n";
+    }
+
+    Jet::HDF5AltitudeWrite(residenceTime, numAzimuth, partRad_ind,
+        partRad, initVel_ind, initVel);
+}
 
 
 
