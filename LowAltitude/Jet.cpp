@@ -49,7 +49,7 @@ using namespace genFunctions;
 // GRIDTYPE = Hardcoded variable defining grid
 // - GRIDTYPE = 0 --> low altitude grid, [100m, 5km].
 // - GRIDTYPE = 1 --> grid over [5km, 100km].
-#define GRIDTYPE 0
+#define GRIDTYPE 1
 #if GRIDTYPE==0     // low altitude
     const int Jet::m_nr = 196;
     const int Jet::m_nphi = 45;
@@ -66,7 +66,7 @@ using namespace genFunctions;
     const int Jet::m_nvr = 35;
     const int Jet::m_nvphi = 20;
     const float Jet::m_min_altitude = 5;
-    const float Jet::m_max_altitude = 100;
+    const float Jet::m_max_altitude = 200;
     const float Jet::m_max_velocity = 1;
     const float Jet::m_max_rphi = 15;
     const float Jet::m_max_vphi = 90;

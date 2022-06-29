@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
           numAzimuth = 100,
           partRad_ind = 0,
           initVel_ind = 0,
-          num_inner_inc = 4,    // Number of particles simulated/inclination bin
+          num_inner_inc = 8,    // Number of particles simulated/inclination bin
           numSpeeds = 28,
           numRadii = 30;
     int   orthogonal = 1,
