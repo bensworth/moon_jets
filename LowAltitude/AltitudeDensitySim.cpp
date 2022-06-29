@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
     
     double errorTol = 1e-12;
     float partPot = -1.49,
+          vgas = 1,       // gas velocity = max particle speed
           initVel,
           partRad;
     int   extrapolate = 15, 
@@ -61,14 +62,13 @@ int main(int argc, char *argv[])
           numAzimuth = 100,
           partRad_ind = 0,
           initVel_ind = 0,
-          num_inner_inc = 8,    // Number of particles simulated/inclination bin
-          numSpeeds = 28,
+          num_inner_inc = 4,    // Number of particles simulated/inclination bin
+          numSpeeds = 50,
           numRadii = 30;
     int   orthogonal = 1,
           bFieldModel  = 1, // Connerey charging model
           jet_ind = -1;
-    bool compute_flux = true,
-         angular_dist = true;
+    bool angular_dist = true;
 
     for(int i=1; i<argc; i++) {
 
@@ -76,10 +76,6 @@ int main(int argc, char *argv[])
             charging     = 0;
             numVariables = 12;
         }
-        // else if(strcmp(argv[i],"-gridsize") == 0) {
-        //     i += 1;
-        //     gridSize = atof(argv[i]);
-        // }
         else if(strcmp(argv[i],"-naz") == 0)
         {
             i += 1;
@@ -94,14 +90,6 @@ int main(int argc, char *argv[])
         {
             i += 1;
             initVel_ind = atoi(argv[i]);
-        }
-        else if(strcmp(argv[i],"-flux") == 0)
-        {
-            compute_flux = true;
-        }
-        else if(strcmp(argv[i],"-time") == 0)
-        {
-            compute_flux = false;
         }
         else if(strcmp(argv[i],"-uni") == 0)
         {
@@ -122,15 +110,15 @@ int main(int argc, char *argv[])
     //------------------------------------ Load Data ------------------------------------//
 
     // Create vector of particle speeds in km/s between [25,50,...,700]
-    float dvel = 0.7/numSpeeds;
-    vector<float> partSpeeds(28);
+    float dvel = vgas/numSpeeds;
+    vector<float> partSpeeds(numSpeeds);
     for (int vv=0; vv<partSpeeds.size(); vv++) {
         partSpeeds[vv] = (vv+1)*dvel;
     }
 
     // Create vector of particle sizes in um between [0.5,1.0,...,15]
     float drad = 15.0 / numRadii;
-    vector<float> partSizes(30);
+    vector<float> partSizes(numRadii);
     for (int vv=0; vv<partSizes.size(); vv++) {
         partSizes[vv] = (vv+1)*drad;
     }
@@ -186,20 +174,10 @@ int main(int argc, char *argv[])
         << "Initial particle speed = " << partSpeeds[initVel_ind] << " km/s\n";
 
     //-------------------------------- Simulate jet --------------------------------//
-    Eruptor.HoverSimOMP(systemSolver, numAzimuth, partRad_ind,
+    Eruptor.AltitudeSim(systemSolver, numAzimuth, partRad_ind,
         partSizes[partRad_ind], initVel_ind, partSpeeds[initVel_ind],
-        num_inner_inc, compute_flux, angular_dist);
+        num_inner_inc, angular_dist);
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
 

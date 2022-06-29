@@ -58,6 +58,9 @@ public:
     void HoverSimOMP(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
     const float &partRad, const int &initVel_ind, const float &initVel,
     const int &num_inner_inc, bool compute_flux=true, bool angular_dist=true);
+    void AltitudeSim(Solver & systemSolver, const int &numAzimuth, const int &partRad_ind,
+        const float &partRad, const int &initVel_ind, const float &initVel,
+        const int &num_inner_inc, bool angular_dist=true);
 
 private:
 
@@ -347,6 +350,89 @@ private:
             DataSpace time_dspace(1, dim1);
             Attribute att_time = file.createAttribute (dataset_name, dint, time_dspace);
             att_time.write(dint, &one_time);
+        }
+        // catch failures
+        //catch( FileIException error ) { error.printErrorStack(stderr,H5E_DEFAULT); } // H5File operations error
+        //catch( DataSetIException error ) { error.printErrorStack(); } // DataSet operations error
+        //catch( DataSpaceIException error ) { error.printErrorStack(); } // DataSpace operations errpr
+        //catch( DataTypeIException error ) { error.printErrorStack(); } // DataSpace operations error
+        catch( FileIException error ) { } // H5File operations error
+        catch( DataSetIException error ) { } // DataSet operations error
+        catch( DataSpaceIException error ) { } // DataSpace operations errpr
+        catch( DataTypeIException error ) { } // DataSpace operations error
+    }
+
+    void HDF5AltitudeWrite(std::unique_ptr<float[]> &residenceTime,
+        const int &numAzimuth, const int &partRad_ind, const float &partRad,
+        const int &initVel_ind, const float &initVel)
+    {
+        // Try block to detect exceptions raised by any of the calls inside it
+        try
+        {
+            // Altitude and angle at cell center of grid
+            float alts[m_nr];
+            for (int i=0; i<m_nr; i++) {
+                alts[i] = m_min_altitude + (i+0.5)*m_dr;
+            }
+            float angs[m_nphi];
+            for (int i=0; i<m_nphi; i++) {
+                angs[i] = (i+0.5)*m_dphi;
+            }
+
+            // Turn off the auto-printing when failure occurs so that we can
+            // handle the errors appropriately
+            Exception::dontPrint();
+
+            // Create file; H5F_ACC_TRUNC means if the file exists, open as
+            // read only, otherwise create new file
+            std::string  file_name = m_save_prefix + "AltResidenceTime_r" + std::to_string(partRad_ind) +
+                "_s" + std::to_string(initVel_ind) + ".hdf5";
+            H5File file(file_name, H5F_ACC_TRUNC);
+            std::string dataset_name;
+            FloatType dfloat(PredType::NATIVE_FLOAT);  // Native C++ Float32
+            IntType dint(PredType::NATIVE_INT);        // Native C++ Int
+
+            // 1d array storage
+            int ndims = 1;
+            hsize_t dim_alt[1] = {m_nr};  // dataset dimensions
+            DataSpace dataspace_res(ndims, dim_alt);             // Create data space w/ given dims
+            dataset_name = "residence_time";
+            DataSet dataset_res = file.createDataSet(dataset_name, dfloat, dataspace_res);
+            dataset_res.write(residenceTime.get(), dfloat);
+
+            // Save cell-centered altitude array
+            ndims = 1;
+            DataSpace dataspace_alts(ndims, dim_alt);
+            dataset_name = "altitudes";
+            DataSet dataset_alts = file.createDataSet(dataset_name, dfloat, dataspace_alts);
+            dataset_alts.write(alts, dfloat);
+
+            // Save cell-centered inclination array
+            ndims = 1;
+            hsize_t dim_phi[1] = {m_nphi};
+            DataSpace dataspace_phi(ndims, dim_phi);
+            dataset_name = "inclinations";
+            DataSet dataset_phi = file.createDataSet(dataset_name, dfloat, dataspace_phi);
+            dataset_phi.write(angs, dfloat);
+
+            // Particle radius attribute
+            dataset_name = "particle radius"; 
+            hsize_t dim1[1] = {1}; 
+            DataSpace radius_dspace(1, dim1);
+            Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
+            att_radius.write(dfloat, &partRad);
+
+            // Particle speed attribute
+            dataset_name = "initial speed"; 
+            DataSpace speed_dspace(1, dim1);
+            Attribute att_speed = file.createAttribute (dataset_name, dfloat, speed_dspace);
+            att_speed.write(dfloat, &initVel);
+
+            // Number azimuth attribute
+            dataset_name = "number azimuth angles"; 
+            DataSpace azimuth_dspace(1, dim1);
+            Attribute att_azimuth = file.createAttribute (dataset_name, dint, azimuth_dspace);
+            att_azimuth.write(dint, &numAzimuth);
         }
         // catch failures
         //catch( FileIException error ) { error.printErrorStack(stderr,H5E_DEFAULT); } // H5File operations error

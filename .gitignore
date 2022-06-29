@@ -1,5 +1,7 @@
 *DS_Store
 *metadata*
+LowAltitudeSim
+AltitudeDensitySim
 ./Program/EncSim
 ./Program/EurSim
 ./Program/EncPar

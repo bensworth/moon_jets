@@ -5,10 +5,7 @@
 #SBATCH --partition skylake-gold
 
 source setup.sh
-for S in {0..27}
+for S in {31..49}
 do
-    for R in {0..29}
-    do
-        ./LowAlttiudeSim -s ${S} -r ${R} >> output_cos2.txt
-    done
+    ./AltitudeDensitySim -s ${S} -r 20 >> output2_alt.txt
 done

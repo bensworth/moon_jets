@@ -19,16 +19,19 @@ CFLAGS  = $(INC) $(LIB) -g3 -fopenmp -Ofast
 CXX = /home/southworth/c_libs/hdf5/hdf5/bin/h5c++ -std=c++14
 
 SRCS  = genFunctions.cpp Solver.cpp Jet.cpp 
-SRCS1 = LowAlttiudeSim.cpp
+SRCS1 = LowAltitudeSim.cpp
+SRCS2 = AltitudeDensitySim.cpp
 
 OBJS  = ${SRCS:.cpp=.o}
 OBJS1 = ${SRCS1:.cpp=.o}
-EXEC1 = LowAlttiudeSim
+OBJS2 = ${SRCS2:.cpp=.o}
+EXEC1 = LowAltitudeSim
+EXEC2 = AltitudeDensitySim
 
 #.SUFFIXES :
 .SUFFIXES : .o .cpp .h
 
-all: $(EXEC1)
+all: $(EXEC1) $(EXEC2)
 
 .h.o:
 	$(CXX) $(CFLAGS) -c $<
@@ -38,6 +41,9 @@ all: $(EXEC1)
 
 $(EXEC1): $(OBJS) $(OBJS1) 
 	$(CXX) $(LDFLAGS) $(OBJS) $(OBJS1) $(CFLAGS) -o $(EXEC1)
+
+$(EXEC2): $(OBJS) $(OBJS2) 
+	$(CXX) $(LDFLAGS) $(OBJS) $(OBJS2) $(CFLAGS) -o $(EXEC2)
 
 	
 Jet.o: genFunctions.o

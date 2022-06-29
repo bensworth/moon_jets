@@ -59,6 +59,9 @@ public:
             const float &max_vel, const int &num_vel,
             const float &max_rphi, const int &num_rphi, 
             const float &max_vphi, const int &num_vphi);
+    void CreateAltitudeGrid(const float &min_alt,
+        const float &max_alt, const int &num_alt,
+        const float &max_rphi);
 
     vector<double> Bfield_Connerney(const double & x, const double & y, const double & z, 
             const vector<double> & moonPos, const double & r);
@@ -197,6 +200,89 @@ public:
             m_change            = 0;
         }       
     }
+
+    void AltitudeSim(const double & dt, double *y,
+        const double & weight, std::unique_ptr<float[]> &flux)
+    {
+        if (CONST_max_rphi < 0) {
+            std::cout << "Must call CreateDistributionGrid(...) first!\n";
+        }
+
+        float  partPos_x,
+               partPos_y,
+               partPos_z,
+               partVel_x,
+               partVel_y,
+               partVel_z;
+        double dt_next,
+               curr_step;
+        int    step_success;
+        long int previous_ind = -1;
+
+        // Loop To Run Simulation.
+        bool within_grid = true;
+        while (within_grid)
+        {
+            // Take one time step of size dt. If desired error has not been reached, reduce step
+            // size and repeat until we have completed one step of size dt.
+            dt_next   = dt;
+            curr_step = 0.;
+            while( abs(dt - curr_step) > 1e-10 ) {
+                step_success = Solver::BulirschStoerStep(dt_next, y, 1e-12);
+                if(step_success > 1e-10) {
+                    curr_step += dt_next;
+                    dt_next    = dt - curr_step;
+                }
+                else {
+                    dt_next /= 2.;
+                }
+            }
+            // Compute particle position and velocity with respect to Enceladus in 
+            // spherical coordinate system centered at the south pole.
+            partPos_x = y[0] - y[6];
+            partPos_y = y[1] - y[7];
+            partPos_z = y[2] - y[8];
+            float r_p, phi_r, r_v, phi_v, temp;
+            Solver::TransformSpherical(r_p, temp, phi_r, partPos_x,
+                partPos_y,partPos_z,y[6],y[7],y[8], true);
+            partVel_x = y[3] - y[9];
+            partVel_y = y[4] - y[10];
+            partVel_z = y[5] - y[11];
+            Solver::TransformSpherical(r_v, temp, phi_v, partVel_x,
+                partVel_y,partVel_z,y[6],y[7],y[8], false);
+
+            // Treat opening angle as away from negative vertical axis
+            phi_r = PI - phi_r;
+            phi_v = PI - phi_v;
+
+            // Check if particle outside of data cone in terms of inclination angle
+            // or altitude.
+            if (phi_r > CONST_max_rphi || r_p > CONST_max_altitude) {
+                within_grid = false;
+                break;
+            }
+            // Only track density for particles above minimum altitude of grid
+            else if (r_p < CONST_min_altitude) {
+                // Break if particles are returning to Enceladus and <min altitude
+                if (phi_v > CONST_max_vphi) break;
+                else continue;
+            }
+
+            // Add weighted residence time to space-velocity residence time profile
+            int ind = Solver::GetAltitudeIndex(r_p);   
+            flux[ind] += weight;
+        }
+        // Set CONST_numVariables and associated variables to inital status if equilibrium
+        // charge was reached.
+        if(m_change == 1) {
+            CONST_numVariables += 1;
+            CONST_partRad      *= 1e-6;
+            CONST_partMass      = 4./3.*PI * pow(CONST_partRad,3) * 1000.;
+            Evaluate            = &Solver::EvaluateDeriv;
+            m_change            = 0;
+        }       
+    }
+
 
 private:
 
@@ -340,6 +426,7 @@ private:
     double X2L(const double & x, const double & y, const double & z);
     double Declination(const double & x, const double & y, const double & z, const double & vx,
             const double & vy, const double & vz);
+    int GetAltitudeIndex(double r_p);
 
     // vector<double> Bfield_Connerney(const double & x, const double & y, const double & z, 
     //      const vector<double> & moonPos, const double & r);
