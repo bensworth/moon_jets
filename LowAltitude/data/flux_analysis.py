@@ -107,9 +107,9 @@ def getOneParticleMassFlux(hd_file, speed_size_fn, rho, min_r=0, max_r=100):
 ################### Distribution parameters ##################
 ##############################################################
 # Power law size distribution and average volume of particle 
-rmin = 0.5 * 1e-6 	# Minimum particle radius in m
+rmin = 1.0 * 1e-6 	# Minimum particle radius in m
 rmax = 15 * 1e-6  	# Maximum particle radius in m
-alpha = 3.1
+alpha = 4.6
 Calpha =  (alpha-1) / (rmin**(1-alpha) - rmax**(1-alpha))
 psize = lambda r: Calpha * r**(-alpha)
 if alpha != 4.0:
@@ -120,8 +120,8 @@ else:
 		( 3.0*(rmin**(1.0-alpha)-rmax**(1.0-alpha)) )
 
 # Size-dependent speed distribution
-rc = 0.8 * 1e-6		# Critical radius in um
-vgas = 700			# gas velocity in m/s
+rc = 2.5 * 1e-6		# Critical radius in um
+vgas = 900			# gas velocity in m/s
 pspeed = lambda v, r: (1.0 + r/rc)*(r/rc)*(v/(vgas*vgas))*(1-v/vgas)**(r/rc - 1.0)
 
 # Combined speed-size distribution
@@ -130,26 +130,26 @@ pspeed_size = lambda r, v: pspeed(v,r) * psize(r)
 ##############################################################
 ################### Collection parameters ####################
 ##############################################################
-# min_r = 0.5*1e-6		# Minimum particle radius to collect
-min_r = 3.0*1e-6		# Maximum particle radius to collect
+min_r = 1.0*1e-6		# Minimum particle radius to collect
+# min_r = 3.0*1e-6		# Maximum particle radius to collect
 max_r = None
 det_size = 25			# Detector size in cm
-mass_prod = 25.0/80.0 	# Mass production kg/s = 25kg/s / 80 jets
-max_alt = 1000			# Max altitude for cone heat map plots
+mass_prod = 0.5 	# Mass production kg/s = 25kg/s / 80 jets
+max_alt = 4000			# Max altitude for cone heat map plots
 # alt_set = [500, 1000, 2000, 3000]
 alt_set = [100,200,300,400,500]  	# Altitudes to plot result at
-show = False				# Show plot <-> show=True, save plot <-> show=False
-angular_dist = "uni" 	# Options "uni" and "cos2"
+show = True				# Show plot <-> show=True, save plot <-> show=False
+angular_dist = "cos2" 	# Options "uni" and "cos2"
 mass_flux = True		# Plot results in mass flux. If false, plot particle flux
-
+max_angle = 25
 
 ##############################################################
 ###################### Construct plots #######################
 ##############################################################
 if angular_dist == "uni":
-	hh = h5py.File('./EncFluxData_uni.hdf5', 'r')
+	hh = h5py.File('./EncFluxData_max-angle'+str(max_angle)+'_uni.hdf5', 'r')
 else:
-	hh = h5py.File('./EncFluxData.hdf5', 'r')
+	hh = h5py.File('./EncFluxData_max-angle'+str(max_angle)+'.hdf5', 'r')
 rho = 916.0 		  	# Density water ice in kg/m^3
 sens_area = (det_size/100.0)**2  	# Sensitive area in m^2
 scaling = sens_area * mass_prod / (rho*vav)
@@ -185,42 +185,42 @@ flux *= scaling
 ttl = str(det_size)+"cm x "+str(det_size)+"cm detector, M$^+=$ " + str(mass_prod) + " kg/s"
 
 ##############################################################
-nr = flux.shape[0]
-nphi = flux.shape[1]
-alt = np.array(hh['grid altitudes'])
-alt_inds = np.where(alt < max_alt)[0]
-alt = alt[alt_inds]
-# Symmetrize flux for better viewing
-incr = np.pi/180.0 * (90 - np.array(hh['grid inclinations']))
-incl = np.pi/180.0 * (90 + np.array(hh['grid inclinations']))
-aar, iir = np.meshgrid(alt, incr)
-aal, iil = np.meshgrid(alt, incl)
+# nr = flux.shape[0]
+# nphi = flux.shape[1]
+# alt = np.array(hh['grid altitudes'])
+# alt_inds = np.where(alt < max_alt)[0]
+# alt = alt[alt_inds]
+# # Symmetrize flux for better viewing
+# incr = np.pi/180.0 * (90 - np.array(hh['grid inclinations']))
+# incl = np.pi/180.0 * (90 + np.array(hh['grid inclinations']))
+# aar, iir = np.meshgrid(alt, incr)
+# aal, iil = np.meshgrid(alt, incl)
 
-# Plot flux cone for particle flux
-fig = plt.figure(figsize=(8,8))
-ax = fig.add_subplot(projection='polar')
-ax.set_thetamin(75)
-ax.set_thetamax(105)
-# Heat map
-if mass_flux:
-	pc = ax.pcolormesh(iir, aar, np.log(flux[alt_inds,:].T), shading='auto', vmin=-4, vmax=1)
-	ax.pcolormesh(iil, aal, np.log(flux[alt_inds,:].T), shading='auto', vmin=-4, vmax=1)
-	cbar = fig.colorbar(pc, ticks=[-4,-3,-2,-1,0,1], label=lbl)
-	cbar.ax.set_yticklabels(['1e-4', '1e-3', '1e-2', '0.1', '1', '10'])  # vertically oriented colorbar)
-else:
-	pc = ax.pcolormesh(iir, aar, np.log(flux[alt_inds,:].T), shading='auto')
-	ax.pcolormesh(iil, aal, np.log(flux[alt_inds,:].T), shading='auto')
-# Contour lines
-plt.contour(iil, aal, np.log10(flux[alt_inds,:].T), levels=[-4,-3,-2,-1,0,1], colors='k', linestyles='solid', linewidths=1)
-plt.contour(iir, aar, np.log10(flux[alt_inds,:].T), levels=[-4,-3,-2,-1,0,1], colors='k', linestyles='solid', linewidths=1)
-plt.title(ttl)
-if show:
-	plt.show()
-else:
-	if mass_flux:
-		plt.savefig("./figures/mass_conePlot_"+params)
-	else:
-		plt.savefig("./figures/num_conePlot_"+params)
+# # Plot flux cone for particle flux
+# fig = plt.figure(figsize=(8,8))
+# ax = fig.add_subplot(projection='polar')
+# ax.set_thetamin(75)
+# ax.set_thetamax(105)
+# # Heat map
+# if mass_flux:
+# 	pc = ax.pcolormesh(iir, aar, np.log(flux[alt_inds,:].T), shading='auto', vmin=-4, vmax=1)
+# 	ax.pcolormesh(iil, aal, np.log(flux[alt_inds,:].T), shading='auto', vmin=-4, vmax=1)
+# 	cbar = fig.colorbar(pc, ticks=[-4,-3,-2,-1,0,1], label=lbl)
+# 	cbar.ax.set_yticklabels(['1e-4', '1e-3', '1e-2', '0.1', '1', '10'])  # vertically oriented colorbar)
+# else:
+# 	pc = ax.pcolormesh(iir, aar, np.log(flux[alt_inds,:].T), shading='auto')
+# 	ax.pcolormesh(iil, aal, np.log(flux[alt_inds,:].T), shading='auto')
+# # Contour lines
+# plt.contour(iil, aal, np.log10(flux[alt_inds,:].T), levels=[-4,-3,-2,-1,0,1], colors='k', linestyles='solid', linewidths=1)
+# plt.contour(iir, aar, np.log10(flux[alt_inds,:].T), levels=[-4,-3,-2,-1,0,1], colors='k', linestyles='solid', linewidths=1)
+# plt.title(ttl)
+# if show:
+# 	plt.show()
+# else:
+# 	if mass_flux:
+# 		plt.savefig("./figures/mass_conePlot_"+params)
+# 	else:
+# 		plt.savefig("./figures/num_conePlot_"+params)
 
 ##############################################################
 alt = np.array(hh['grid altitudes'])
