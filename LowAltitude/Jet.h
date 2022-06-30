@@ -171,8 +171,15 @@ private:
 
             // Create file; H5F_ACC_TRUNC means if the file exists, open as
             // read only, otherwise create new file
-            std::string  file_name = m_save_prefix + "EncResidenceTime_r" + std::to_string(partRad_ind) +
-                "_s" + std::to_string(initVel_ind) + ".hdf5";
+            std::string  file_name;
+            if (angular_dist) {
+                file_name = m_save_prefix + "EncResidenceTime_r" + std::to_string(partRad_ind) +
+                "_s" + std::to_string(initVel_ind)  + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
+            }
+            else {
+                file_name = m_save_prefix + "EncResidenceTime_uni_r" + std::to_string(partRad_ind) +
+                "_s" + std::to_string(initVel_ind)  + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
+            }
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;
             FloatType dfloat(PredType::NATIVE_FLOAT);  // Native C++ Float32
@@ -212,6 +219,12 @@ private:
             DataSpace radius_dspace(1, dim1);
             Attribute att_radius = file.createAttribute (dataset_name, dfloat, radius_dspace);
             att_radius.write(dfloat, &partRad);
+
+            // Particle radius attribute
+            dataset_name = "maximum angle"; 
+            DataSpace maxang_dspace(1, dim1);
+            Attribute att_maxang = file.createAttribute (dataset_name, dfloat, maxang_dspace);
+            att_maxang.write(dfloat, &m_max_rphi);
 
             // Particle speed attribute
             dataset_name = "initial speed"; 
@@ -385,8 +398,15 @@ private:
 
             // Create file; H5F_ACC_TRUNC means if the file exists, open as
             // read only, otherwise create new file
-            std::string  file_name = m_save_prefix + "AltResidenceTime_r" + std::to_string(partRad_ind) +
-                "_s" + std::to_string(initVel_ind) + ".hdf5";
+            std::string file_name;
+            if (angular_dist) {
+                file_name = m_save_prefix + "AltResidenceTime_r" + std::to_string(partRad_ind) +
+                    "_s" + std::to_string(initVel_ind) + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
+            }
+            else {
+                file_name = m_save_prefix + "AltResidenceTime_uni_r" + std::to_string(partRad_ind) +
+                    "_s" + std::to_string(initVel_ind) + "_ang" + std::to_string(int(m_max_rphi)) + ".hdf5";
+            }
             H5File file(file_name, H5F_ACC_TRUNC);
             std::string dataset_name;
             FloatType dfloat(PredType::NATIVE_FLOAT);  // Native C++ Float32
